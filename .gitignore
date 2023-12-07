@@ -1,0 +1,9 @@
+.venv
+venv/
+
+.vscode/*
+.idea/*
+
+*.DS_Store
+*.xlsx
+*.csv
