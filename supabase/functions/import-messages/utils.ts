@@ -15,7 +15,7 @@ const outlierField: UserField = {
 export const buildCreateMessageBody = (
     userId: number,
     userPhone: string,
-    userName: string | null,
+    fullName: string | null,
     message: string,
     outbound: boolean,
     messageDate: number
@@ -23,13 +23,13 @@ export const buildCreateMessageBody = (
     const userField: UserField = {
         id: userId.toString(),
         username: userPhone,
-        name: userName
+        name: fullName
     };
     return {
         messages: {
           account: Deno.env.get('ACCOUNT_ID'),
           body: message,
-          references: [`${userPhone}`],
+          references: [userPhone],
           delivered_at: convertExcelDateToUnixTimestamp(messageDate),
           from_field: outbound ? outlierField : userField,
           to_fields: outbound ? [userField] : [outlierField]
