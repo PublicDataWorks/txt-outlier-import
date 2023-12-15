@@ -30,5 +30,5 @@ df_result = pd.read_sql_query(query, engine)
 no_rows_per_file = 40_000
 n_files = math.ceil(df_result.shape[0] / no_rows_per_file)
 for i in range(n_files):
-    df_temp = df_result.iloc[i * no_rows_per_file : (i + 1) * no_rows_per_file]
+    df_temp = df_result.iloc[i * no_rows_per_file: (i + 1) * no_rows_per_file]
     df_temp.to_csv(f"output_{i + 1}.csv", index=False)
