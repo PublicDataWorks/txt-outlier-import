@@ -1,5 +1,5 @@
 SELECT cron.schedule(
-	'import-messages-cron',
+	'invoke-import-messages-every-minute',
 	'* * * * *',
 	$$
 	    SELECT net.http_get(

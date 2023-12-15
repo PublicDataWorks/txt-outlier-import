@@ -19,16 +19,8 @@ Deno.serve(async (_req: Request) => {
         const imported_message_ids: number[] = []
         for (const row of rows) {
             const startTime = Date.now();
-            let fullName: string | null;
-            if (row.first_name && row.last_name) {
-                fullName = `${row.first_name} ${row.last_name}`;
-            } else {
-                fullName = row.first_name || row.last_name
-            }
             const data = buildCreateMessageBody(
-                Number(row.user_id),
                 row.phone,
-                fullName,
                 row.message_text,
                 row.outbound,
                 row.message_date
@@ -43,6 +35,7 @@ Deno.serve(async (_req: Request) => {
             } else {
                 await sendError(client, row.message_id, response)
             }
+            console.log("Successfully imported messages", row.message_id)
             await new Promise(r => setTimeout(r, Math.max(0, 1000 - (Date.now() - startTime))))
         }
         await client.queryObject({

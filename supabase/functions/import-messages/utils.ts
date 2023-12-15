@@ -4,26 +4,22 @@ import {PoolClient} from "https://deno.land/x/postgres@v0.17.0/client.ts";
 
 export const convertExcelDateToUnixTimestamp = (excelDate: number) => {
     const temp = new Date((excelDate - (25567 + 1)) * 24 * 60 * 60 * 1000);
-    return Math.floor(temp.getTime() / 1000);
+    return Math.round(temp.getTime() / 1000);
 };
 
 const outlierField: UserField = {
   id: null,
   username: Deno.env.get('ACCOUNT_ALIAS') || '',
-  name: "Outlier",
 };
 export const buildCreateMessageBody = (
-    userId: number,
     userPhone: string,
-    fullName: string | null,
     message: string,
     outbound: boolean,
     messageDate: number
 ): RequestBody => {
     const userField: UserField = {
-        id: userId.toString(),
+        id: userPhone,
         username: userPhone,
-        name: fullName
     };
     return {
         messages: {

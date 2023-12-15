@@ -1,7 +1,6 @@
 export type UserField = {
-  id: string | null;
+  id: string | null
   username: string;
-  name: string | null
 };
 
 
@@ -19,12 +18,9 @@ type Message = {
 };
 
 export type Row = {
-  first_name: string | null;
-  last_name: string | null;
-  user_id: string;
-  phone: string;
   message_text: string;
   outbound: boolean;
   message_date: number;
   message_id: number
+  phone: string;
 };
