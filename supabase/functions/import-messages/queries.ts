@@ -14,11 +14,11 @@ export const selectQuery = `
         ORDER BY sm.id
       ) AS rn
     FROM
-      sms_threads st
+      legacy.sms_threads st
     JOIN
-      sms_messages sm 
+      legacy.sms_messages sm 
       ON st.id = sm.thread_id
-    WHERE sm.id > (SELECT latest_id FROM import_message_progress LIMIT 1) and message_text is not null
+    WHERE sm.id > (SELECT latest_id FROM legacy.import_message_progress LIMIT 1) and message_text is not null
   )
   SELECT 
     message_text, outbound, message_date, message_id, phone
@@ -29,14 +29,14 @@ export const selectQuery = `
 `;
 
 export const insertErrorQuery = `
-  INSERT INTO import_message_errors(message_id, status_code, text, error_time)
+  INSERT INTO legacy.import_message_errors(message_id, status_code, text, error_time)
   VALUES($1, $2, $3, $4)
 `;
 
 export const updateLatestMessageIdQuery = `
-  UPDATE import_message_progress SET latest_id = $1
+  UPDATE legacy.import_message_progress SET latest_id = $1
 `;
 
 export const markAsImportedQuery = `
-  UPDATE sms_messages SET imported = true WHERE id = ANY($1)
+  UPDATE legacy.sms_messages SET imported = true WHERE id = ANY($1)
 `;
