@@ -9,4 +9,4 @@ venv/
 *.csv
 
 **/.env
-supabase/.temp
+**/.temp
