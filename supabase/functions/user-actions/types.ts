@@ -1,4 +1,4 @@
-export type User = {
+export type RequestUser = {
   id: string;
   email: string;
   name: string;
@@ -8,33 +8,30 @@ export type User = {
 export type RequestComment = {
   id: string;
   body: string;
+  mentions: (MentionUser | MentionTeam)[];
   created_at: number;
   attachment: null | string;
-  task: null | string;
-  author: User;
+  task: null | RequestTask;
+  author: RequestUser;
 };
 
-export type CommentRecord = {
-  id: string;
-  body: string;
-  created_at: Date;
-  attachment: null | string;
-  task_completed_at: null | Date;
-  author_id: string;
+export type RequestTask = {
+  completed_at: number;
+  assignees: RequestUser[];
 };
 
 export type RequestBody = {
-  rule: Rule; // replace object with the actual type if known
-  conversation: object; // replace object with the actual type if known
+  rule: RequestRule;
+  conversation: object;
   comment: RequestComment;
-  latest_message: object; // replace object with the actual type if known
+  latest_message: object;
 };
 
-enum RuleType {
+export enum RuleType {
   NewComment = "new_comment",
 }
 
-export type Rule = {
+export type RequestRule = {
   id: string;
   description: string;
   type: RuleType;
@@ -43,6 +40,18 @@ export type Rule = {
 export type Error = {
   rule_id: string;
   error_message: string
+};
+
+export type MentionUser = {
+  user_id: string,
+  offset: number,
+  length: number
+};
+
+export type MentionTeam = {
+  team_id: string,
+  offset: number,
+  length: number
 };
 
 export class AppError extends Error {}

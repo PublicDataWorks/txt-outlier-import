@@ -1,40 +1,16 @@
-import {AppError, CommentRecord, RequestBody, RequestComment, Rule, User} from "./types.ts";
+import {AppError, CommentRecord, RequestBody, RequestComment, RequestRule, RuleType, RequestUser} from "./types.ts";
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js';
-
-export const convertRequestCommentToCommentRecord = (comment: RequestComment): CommentRecord => {
-  const { author, task, mentions, meta, ...commentWithoutAuthor } = comment;
-  return {
-    ...commentWithoutAuthor,
-    author_id: author.id,
-    created_at: new Date(comment.created_at * 1000),
-    task_completed_at: null,
-  };
-};
-
-export const insertRule = async (client: SupabaseClient, rule: Rule) => {
+export const upsertRule = async (client: SupabaseClient, request_rule: RequestRule) => {
+  const rule = {
+    id: request_rule.id,
+    description: request_rule.description,
+    type: request_rule.type
+  }
   const {_, error} = await client
       .from('rules')
-      .insert([rule]);
+      .upsert([rule], { onConflict: 'id' });
   if (error) {
     throw new AppError(`Failed to insert rule: ${error.message}`);
-  }
-}
-
-export const upsertAuthor = async (client: SupabaseClient, author: User) => {
-  const {_, error} = await client
-      .from('users')
-      .upsert([author], { onConflict: 'id' });
-  if (error) {
-    throw new AppError(`Failed to upsert author: ${error.message}. Data: ${JSON.stringify(author)}`);
-  }
-}
-
-export const insertComment = async (client: SupabaseClient, comment: CommentRecord) => {
-  const {_, error} = await client
-      .from('comments')
-      .insert([comment]);
-  if (error) {
-    throw new AppError(`Failed to insert comment: ${error.message}. Data: ${JSON.stringify(comment)}`);
   }
 }
 
@@ -50,6 +26,25 @@ export const handleError = async (client: SupabaseClient, request_body: RequestB
       .from('errors')
       .insert([err]);
   if (error) {
-    console.log(`Failed to insert error: ${error.message}. Data: ${JSON.stringify(request_body)}, ${JSON.stringify(app_error)}`)
+    console.error(`Failed to insert error: ${error.message}. Data: ${JSON.stringify(request_body)}, ${JSON.stringify(app_error)}`)
+  }
+}
+
+export const add_user_history = async (supabase: SupabaseClient, id: string, name: string, email: string, avatar_url: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('email, name, avatar_url')
+    .eq('id', id)
+    .order('id', { ascending: false })
+    .limit(1)
+  if (error) {
+    throw new AppError(`Failed to fetch author. Data: ${id}`);
+  }
+  if (data.length === 1 && (data[0].email !== email || data[0].name !== name || data[0].avatar_url !== avatar_url)) {
+    const new_user = { user_id: id, email, name, avatar_url };
+    const {_, error} = await supabase.from('user_history').insert([new_user]);
+    if (error) {
+      throw new AppError(`Failed to insert user_history: ${error.message}. Data: ${JSON.stringify(new_user)}`);
+    }
   }
 }
