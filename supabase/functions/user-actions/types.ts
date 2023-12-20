@@ -15,6 +15,16 @@ export type RequestComment = {
   author: RequestUser;
 };
 
+export type Comment = {
+  id: string;
+  body: string;
+  created_at: Date;
+  attachment: null | string;
+  task_completed_at: null | Date;
+  is_task: boolean;
+  author_id: string;
+};
+
 export type RequestTask = {
   completed_at: number;
   assignees: RequestUser[];
@@ -39,19 +49,19 @@ export type RequestRule = {
 
 export type Error = {
   rule_id: string;
-  error_message: string
+  error_message: string;
 };
 
 export type MentionUser = {
-  user_id: string,
-  offset: number,
-  length: number
+  user_id: string;
+  offset: number;
+  length: number;
 };
 
 export type MentionTeam = {
-  team_id: string,
-  offset: number,
-  length: number
+  team_id: string;
+  offset: number;
+  length: number;
 };
 
 export class AppError extends Error {}
