@@ -1,8 +1,8 @@
 import { AppError, RequestBody, RequestRule, RequestUser } from "./types.ts";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+import { drizzle } from 'npm:drizzle-orm/postgres-js'
 
 export const upsertRule = async (
-  client: SupabaseClient,
+    db: drizzle,
   request_rule: RequestRule,
 ) => {
   const rule = {
@@ -19,7 +19,7 @@ export const upsertRule = async (
 };
 
 export const handleError = async (
-  client: SupabaseClient,
+    db: drizzle,
   request_body: RequestBody,
   app_error: AppError,
 ) => {
@@ -43,7 +43,7 @@ export const handleError = async (
 };
 
 export const addUserHistory = async (
-  supabase: SupabaseClient,
+    db: drizzle,
   user: RequestUser,
 ) => {
   const { id: user_id, email, name, avatar_url } = user;
@@ -74,7 +74,7 @@ export const addUserHistory = async (
 };
 
 export const upsertUser = async (
-  supabase: SupabaseClient,
+    db: drizzle,
   user: RequestUser,
 ) => {
   const { error: upsertError } = await supabase

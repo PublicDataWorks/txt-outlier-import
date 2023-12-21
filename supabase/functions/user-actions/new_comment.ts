@@ -6,27 +6,28 @@ import {
   RequestUser,
 } from "./types.ts";
 import { addUserHistory, upsertRule, upsertUser } from "./utils.ts";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+import {drizzle, PostgresJsDatabase} from 'drizzle-orm/postgres-js'
+import {comments} from "./drizzle/schema.ts";
 
 export const handle_new_comment = async (
-  client: SupabaseClient,
+  db: drizzle,
   requestBody: RequestBody,
 ) => {
-  await upsertRule(client, requestBody.rule);
-  await upsertAuthor(client, requestBody.comment.author);
-  await insertComment(client, requestBody.comment);
+  await upsertRule(db, requestBody.rule);
+  await upsertAuthor(db, requestBody.comment.author);
+  await insertComment(db, requestBody.comment);
 };
 
 export const upsertAuthor = async (
-  supabase: SupabaseClient,
-  user: RequestUser,
+    db: drizzle,
+    user: RequestUser,
 ) => {
-  await addUserHistory(supabase, user);
-  await upsertUser(supabase, user);
+  await addUserHistory(db, user);
+  await upsertUser(db, user);
 };
 
 const insertComment = async (
-  supabase: SupabaseClient,
+    db: PostgresJsDatabase,
   request_comment: RequestComment,
 ) => {
   const comment: Comment = {
@@ -40,9 +41,7 @@ const insertComment = async (
     is_task: !!request_comment.task,
     author_id: request_comment.author.id,
   };
-  const { error } = await supabase
-    .from("comments")
-    .insert([comment]);
+  const { error } = await db.insert(comments).values([comment])
   if (error) {
     throw new AppError(
       `Failed to insert comment. Error: ${error.message}, data: ${
@@ -55,7 +54,7 @@ const insertComment = async (
 };
 
 const insertTask = async (
-  supabase: SupabaseClient,
+    db: drizzle,
   request_comment: RequestComment,
 ) => {
   if (request_comment.task) {
@@ -90,7 +89,7 @@ const insertTask = async (
 };
 
 const insertMentions = async (
-  supabase: SupabaseClient,
+    db: drizzle,
   request_comment: RequestComment,
 ) => {
   const mention_data = [];
