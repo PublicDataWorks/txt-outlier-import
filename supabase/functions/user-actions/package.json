@@ -2,17 +2,14 @@
   "name": "user-actions",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "introspect": "drizzle-kit introspect:pg"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "drizzle-orm": "^0.29.1",
-    "pg": "^8.11.3"
-  },
+  "author": "Outlier Media",
+  "license": "",
   "devDependencies": {
+    "drizzle-orm": "^0.29.1",
     "drizzle-kit": "^0.20.7"
   }
 }

@@ -1,5 +1,4 @@
-import { pgTable, pgEnum, bigint, json, text, uuid, foreignKey, timestamp, boolean, index, jsonb } from "npm:drizzle-orm/pg-core"
-import { sql } from "npm:drizzle-orm"
+import { pgTable, pgEnum, json, text, uuid, timestamp, boolean, index, jsonb, serial } from "npm:drizzle-orm/pg-core"
 
 export const keyStatus = pgEnum("key_status", ['default', 'valid', 'invalid', 'expired'])
 export const keyType = pgEnum("key_type", ['aead-ietf', 'aead-det', 'hmacsha512', 'hmacsha256', 'auth', 'shorthash', 'generichash', 'kdf', 'secretbox', 'secretstream', 'stream_xchacha20'])
@@ -11,8 +10,7 @@ export const requestStatus = pgEnum("request_status", ['PENDING', 'SUCCESS', 'ER
 
 
 export const errors = pgTable("errors", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	requestBody: json("request_body").notNull(),
 	ruleType: text("rule_type"),
 	ruleId: uuid("rule_id"),
@@ -21,18 +19,23 @@ export const errors = pgTable("errors", {
 });
 
 export const commentsMentions = pgTable("comments_mentions", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
-	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
+	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" } ),
 	isUser: boolean("is_user").notNull(),
 	teamId: uuid("team_id"),
 });
 
+export const team = pgTable("team", {
+	id: serial('id').primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	teamName: text("team_name"),
+	teamId: uuid("team_id"),
+});
+
 export const tasksAssignees = pgTable("tasks_assignees", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade", onUpdate: "cascade" } ),
@@ -40,8 +43,7 @@ export const tasksAssignees = pgTable("tasks_assignees", {
 });
 
 export const userHistory = pgTable("user_history", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text("name"),
 	email: text("email"),
@@ -55,15 +57,13 @@ export const userHistory = pgTable("user_history", {
 });
 
 export const conversation = pgTable("conversation", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	closed: boolean("closed").default(false).notNull(),
 });
 
 export const conversationLatest = pgTable("conversation_latest", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	id: bigint("id", { mode: "number" }).primaryKey().notNull(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 });
 
@@ -79,10 +79,11 @@ export const comments = pgTable("comments", {
 	id: uuid("id").defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
-	body: text("body").notNull(),
+	body: text("body"),
 	attachment: jsonb("attachment"),
 	taskCompletedAt: timestamp("task_completed_at", { withTimezone: true, mode: 'string' }),
 	authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
+	isTask: boolean("is_task").default(false).notNull(),
 });
 
 export const users = pgTable("users", {
@@ -93,3 +94,10 @@ export const users = pgTable("users", {
 	name: text("name"),
 	avatarUrl: text("avatar_url"),
 });
+
+export type Rule = typeof rules.$inferInsert;
+export type User = typeof users.$inferInsert;
+export type UserHistory = typeof userHistory.$inferInsert;
+export type Err = typeof errors.$inferInsert;
+export type Comment = typeof comments.$inferInsert;
+export type CommentMention = typeof commentsMentions.$inferInsert;

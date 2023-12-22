@@ -1,19 +1,14 @@
 import { AppError, RequestBody, RuleType } from "./types.ts";
 import { handleError } from "./utils.ts";
-import { handle_new_comment } from "./new_comment.ts";
+import { handleNewComment } from "./new-comment.ts";
 
-import { drizzle } from 'drizzle-orm/postgres-js'
-import postgres from 'npm:postgres'
-import { rules } from "./drizzle/schema.ts";
+import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
+import postgres from "npm:postgres";
+
+const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
+const db: PostgresJsDatabase = drizzle(client);
 
 Deno.serve(async (req) => {
-  const client = postgres( Deno.env.get('DB_POOL_URL'), {prepare: false });
-  const db = drizzle(client);
-  // const result = await db.select().from(rules);
-  // console.log(result)
-  //
-  // return new Response("Ok", {status: 200})
-
   let requestBody: RequestBody;
   try {
     requestBody = await req.json();
@@ -24,7 +19,7 @@ Deno.serve(async (req) => {
 
   try {
     if (requestBody.rule.type === RuleType.NewComment) {
-      await handle_new_comment(db, requestBody);
+      await handleNewComment(db, requestBody);
     }
     console.log(`Successfully handled rule: ${requestBody.rule.id}`);
     return new Response("Ok", { status: 200 });
@@ -34,9 +29,7 @@ Deno.serve(async (req) => {
 Request body: ${JSON.stringify(requestBody)}
 Stack trace: ${err.stack}`,
     );
-    if (err instanceof AppError) {
-      await handleError(client, requestBody, err);
-    }
+    await handleError(db, requestBody, err);
     return new Response("", { status: 400 });
   }
 });
