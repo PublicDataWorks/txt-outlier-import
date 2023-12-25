@@ -16,8 +16,6 @@ import {
   comments,
   commentsMentions,
   tasksAssignees,
-  Team,
-  team,
 } from "../drizzle/schema.ts";
 
 export const handleNewComment = async (

@@ -5,6 +5,7 @@ import { handleTeamChange } from "./handlers/team-handler.ts";
 
 import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
 import postgres from "npm:postgres";
+import { handleLabelChange } from "./handlers/label-handler.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
@@ -14,6 +15,7 @@ Deno.serve(async (req) => {
 
   try {
     requestBody = await req.json();
+    console.log(requestBody);
   } catch (err) {
     console.error(`Bad Request: Invalid JSON: ${err}`);
     return new Response("", { status: 400 });
@@ -26,6 +28,9 @@ Deno.serve(async (req) => {
         break;
       case RuleType.TeamChanged:
         await handleTeamChange(db, requestBody);
+        break;
+      case RuleType.LabelChanged:
+        await handleLabelChange(db, requestBody);
         // Add more cases as needed for different rule types
         break;
       default:
