@@ -4,8 +4,8 @@ import {upsertRule} from "../utils.ts";
 import {RequestBody} from "../types.ts";
 
 export const handleTeamChange = async (
-    db: PostgresJsDatabase,
-    requestBody: RequestBody,
+  db: PostgresJsDatabase,
+  requestBody: RequestBody,
 ) => {
     await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
