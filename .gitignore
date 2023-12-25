@@ -12,3 +12,5 @@ venv/
 **/.temp
 
 **/node_modules
+
+**/.idea

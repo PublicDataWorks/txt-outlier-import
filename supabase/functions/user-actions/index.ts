@@ -1,6 +1,7 @@
-import { AppError, RequestBody, RuleType } from "./types.ts";
+import { RequestBody, RuleType } from "./types.ts";
 import { handleError } from "./utils.ts";
-import { handleNewComment } from "./new-comment.ts";
+import { handleNewComment } from "./handlers/comment-handler.ts";
+import { handleTeamChange } from "./handlers/team-handler.ts";
 
 import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
 import postgres from "npm:postgres";
@@ -10,6 +11,7 @@ const db: PostgresJsDatabase = drizzle(client);
 
 Deno.serve(async (req) => {
   let requestBody: RequestBody;
+
   try {
     requestBody = await req.json();
   } catch (err) {
@@ -18,16 +20,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (requestBody.rule.type === RuleType.NewComment) {
-      await handleNewComment(db, requestBody);
+    switch (requestBody.rule.type) {
+      case RuleType.NewComment:
+        await handleNewComment(db, requestBody);
+        break;
+      case RuleType.TeamChanged:
+        await handleTeamChange(db, requestBody);
+        // Add more cases as needed for different rule types
+        break;
+      default:
+        throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);
     }
+
     console.log(`Successfully handled rule: ${requestBody.rule.id}`);
     return new Response("Ok", { status: 200 });
   } catch (err) {
     console.error(
       `An error occurred: ${err.message}.
-Request body: ${JSON.stringify(requestBody)}
-Stack trace: ${err.stack}`,
+    Request body: ${JSON.stringify(requestBody)}
+    Stack trace: ${err.stack}`,
     );
     await handleError(db, requestBody, err);
     return new Response("", { status: 400 });

@@ -4,8 +4,8 @@ import {
   RequestBody,
   RequestComment,
   RequestTask,
-} from "./types.ts";
-import { upsertRule, upsertUsers } from "./utils.ts";
+} from "../types.ts";
+import { upsertRule, upsertUsers } from "../utils.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,
@@ -16,7 +16,9 @@ import {
   comments,
   commentsMentions,
   tasksAssignees,
-} from "./drizzle/schema.ts";
+  Team,
+  team,
+} from "../drizzle/schema.ts";
 
 export const handleNewComment = async (
   db: PostgresJsDatabase,
@@ -88,7 +90,6 @@ const insertTask = async (
   const uniqueAssignees = assignees.filter((current, index, array) =>
     array.findIndex((e) => (e.userId === current.userId)) === index
   );
-
   if (uniqueAssignees.length > 0) {
     await tx
       .insert(tasksAssignees)

@@ -35,6 +35,7 @@ export type RequestRule = {
 
 export enum RuleType {
   NewComment = "new_comment",
+  TeamChanged = "team_change",
 }
 
 export type MentionUser = {
