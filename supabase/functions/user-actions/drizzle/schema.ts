@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   json,
   jsonb,
   pgEnum,
@@ -8,6 +9,8 @@ import {
   serial,
   text,
   timestamp,
+  unique,
+  uniqueIndex,
   uuid,
 } from "npm:drizzle-orm/pg-core";
 
@@ -64,6 +67,22 @@ export const commentsMentions = pgTable("comments_mentions", {
   teamId: uuid("team_id"),
 });
 
+export const labels = pgTable("labels", {
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+  uuid: uuid("uuid").defaultRandom().notNull(),
+  name: text("name").default("").notNull(),
+  nameWithParentNames: text("name_with_parent_names").default("").notNull(),
+  color: text("color"),
+  parent: uuid("parent"),
+  shareWithOrganization: boolean("share_with_organization").default(false)
+    .notNull(),
+  visibility: text("visibility"),
+});
+
 export const tasksAssignees = pgTable("tasks_assignees", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
@@ -102,10 +121,52 @@ export const conversation = pgTable("conversation", {
   closed: boolean("closed").default(false).notNull(),
 });
 
-export const conversationLatest = pgTable("conversation_latest", {
+export const conversationsLabels = pgTable("conversations_labels", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow().notNull(),
+  conversationUuid: uuid("conversation_uuid").references(
+    () => conversationLatest.uuid,
+    { onDelete: "cascade" },
+  ),
+  labelUuid: uuid("label_uuid").references(() => conversationLatest.uuid, {
+    onDelete: "cascade",
+  }),
+}, (table) => {
+  return {
+    conversationLabel: uniqueIndex("conversation_label").on(
+      table.conversationUuid,
+      table.labelUuid,
+    ),
+  };
+});
+
+export const conversationLatest = pgTable("conversation_latest", {
+  id: serial("id").primaryKey(),
+  uuid: uuid("uuid").defaultRandom().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+  messagesCount: integer("messages_count").default(0).notNull(),
+  draftsCount: integer("drafts_count").default(0).notNull(),
+  sendLaterMessagesCount: integer("send_later_messages_count").default(0)
+    .notNull(),
+  attachmentsCount: integer("attachments_count").default(0).notNull(),
+  tasksCount: integer("tasks_count").default(0).notNull(),
+  completedTasksCount: integer("completed_tasks_count").default(0).notNull(),
+  subject: text("subject"),
+  latestMessageSubject: text("latest_message_subject"),
+  assigneeNames: text("assignee_names"),
+  assigneeEmails: text("assignee_emails"),
+  sharedLabelNames: text("shared_label_names"),
+  webUrl: text("web_url").notNull(),
+  appUrl: text("app_url").notNull(),
+}, (table) => {
+  return {
+    conversationLatestUuidKey: unique("conversation_latest_uuid_key").on(
+      table.uuid,
+    ),
+  };
 });
 
 export const rules = pgTable("rules", {
@@ -161,3 +222,6 @@ export type Err = typeof errors.$inferInsert;
 export type Comment = typeof comments.$inferInsert;
 export type CommentMention = typeof commentsMentions.$inferInsert;
 export type Team = typeof team.$inferInsert;
+export type ConversationLatest = typeof conversationLatest.$inferInsert;
+export type Label = typeof labels.$inferInsert;
+export type ConversationLabel = typeof conversationsLabels.$inferInsert;
