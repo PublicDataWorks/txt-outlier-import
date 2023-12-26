@@ -5,7 +5,7 @@ import {
   Label,
   labels,
 } from "../drizzle/schema.ts";
-import {upsertLatestConversation, upsertRule} from "../utils.ts";
+import { upsertLatestConversation, upsertRule } from "../utils.ts";
 import { RequestBody } from "../types.ts";
 import { eq, sql } from "npm:drizzle-orm";
 
@@ -20,7 +20,7 @@ export const handleLabelChange = async (
     const requestConversationsLabels = new Set<ConversationLabel>();
     for (const label of requestBody.conversation.shared_labels) {
       requestLabels.add({
-        uuid: label.id,
+        id: label.id,
         name: label.name,
         nameWithParentNames: label.name_with_parent_names,
         color: label.color,
@@ -29,14 +29,14 @@ export const handleLabelChange = async (
         visibility: label.visibility,
       });
       requestConversationsLabels.add({
-        conversationUuid: requestBody.conversation.id,
-        labelUuid: label.id,
+        conversationId: requestBody.conversation.id,
+        labelId: label.id,
       });
     }
 
     if (requestLabels.size > 0) {
       await tx.insert(labels).values([...requestLabels]).onConflictDoUpdate({
-        target: labels.uuid,
+        target: labels.id,
         set: {
           name: sql`excluded.name`,
           nameWithParentNames: sql`excluded.name_with_parent_names`,
@@ -49,7 +49,7 @@ export const handleLabelChange = async (
     }
     if (requestConversationsLabels.size > 0) {
       await tx.delete(conversationsLabels).where(
-        eq(conversationsLabels.conversationUuid, requestBody.conversation.id!),
+        eq(conversationsLabels.conversationId, requestBody.conversation.id!),
       );
       await tx.insert(conversationsLabels).values([
         ...requestConversationsLabels,

@@ -37,6 +37,8 @@ export enum RuleType {
   NewComment = "new_comment",
   TeamChanged = "team_change",
   LabelChanged = "label_change",
+  ConversationClosed = "conversation_closed",
+  ConversationAssignChange = "conversation_assignee_change",
 }
 
 export type MentionUser = {
@@ -68,9 +70,22 @@ export type RequestConversation = {
   web_url: string;
   app_url: string;
   shared_labels: RequestLabel[];
+  users: ConversationUser[];
 };
 
-export class AppError extends Error {}
+type ConversationUser = {
+  id: string;
+  name: string;
+  email: string;
+  unassigned: boolean;
+  closed: boolean;
+  archived: boolean;
+  trashed: boolean;
+  junked: boolean;
+  assigned: boolean;
+  flagged: boolean;
+  snoozed: boolean;
+};
 
 type RequestLabel = {
   id: string;
