@@ -1,10 +1,3 @@
-export type RequestUser = {
-  id: string;
-  email: string;
-  name: string;
-  avatar_url: string;
-};
-
 export type RequestComment = {
   id: string;
   body: string;
@@ -15,14 +8,11 @@ export type RequestComment = {
   author: RequestUser;
 };
 
-export type Comment = {
+export type RequestUser = {
   id: string;
-  body: string;
-  created_at: Date;
-  attachment: null | string;
-  task_completed_at: null | Date;
-  is_task: boolean;
-  author_id: string;
+  name: string;
+  email: string;
+  avatar_url: string;
 };
 
 export type RequestTask = {
@@ -37,20 +27,16 @@ export type RequestBody = {
   latest_message: object;
 };
 
-export enum RuleType {
-  NewComment = "new_comment",
-}
-
 export type RequestRule = {
   id: string;
   description: string;
   type: RuleType;
 };
 
-export type Error = {
-  rule_id: string;
-  error_message: string;
-};
+export enum RuleType {
+  NewComment = "new_comment",
+  TeamChanged = "team_change",
+}
 
 export type MentionUser = {
   user_id: string;

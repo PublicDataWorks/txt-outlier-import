@@ -1,97 +1,92 @@
 import { AppError, RequestBody, RequestRule, RequestUser } from "./types.ts";
-import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js";
+import {
+  Err,
+  errors,
+  Rule,
+  rules,
+  User,
+  UserHistory,
+  userHistory,
+  users,
+} from "./drizzle/schema.ts";
+import {
+  PostgresJsDatabase,
+  PostgresJsTransaction,
+} from "npm:drizzle-orm/postgres-js";
+import { inArray, sql } from "npm:drizzle-orm";
 
 export const upsertRule = async (
-  client: SupabaseClient,
-  request_rule: RequestRule,
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestRule: RequestRule,
 ) => {
-  const rule = {
-    id: request_rule.id,
-    description: request_rule.description,
-    type: request_rule.type,
+  const newRule: Rule = {
+    id: requestRule.id,
+    description: requestRule.description,
+    type: requestRule.type,
   };
-  const { error } = await client
-    .from("rules")
-    .upsert([rule], { onConflict: "id" });
-  if (error) {
-    throw new AppError(`Failed to insert rule: ${error.message}`);
-  }
+  await tx.insert(rules).values(newRule).onConflictDoUpdate({
+    target: rules.id,
+    set: { description: newRule.description, type: newRule.type },
+  });
 };
 
 export const handleError = async (
-  client: SupabaseClient,
-  request_body: RequestBody,
-  app_error: AppError,
+  db: PostgresJsDatabase,
+  requestBody: RequestBody,
+  appError: AppError,
 ) => {
-  const err = {
-    rule_id: request_body.rule.id,
-    rule_description: request_body.rule.description,
-    rule_type: request_body.rule.type,
-    message: app_error.message,
-    request_body: request_body,
+  const err: Err = {
+    ruleId: requestBody.rule.id,
+    ruleDescription: requestBody.rule.description,
+    ruleType: requestBody.rule.type,
+    message: appError.message,
+    requestBody: requestBody,
   };
-  const { error } = await client
-    .from("errors")
-    .insert([err]);
-  if (error) {
-    console.error(
-      `Failed to insert error: ${error.message}. Data: ${
-        JSON.stringify(request_body)
-      }, ${JSON.stringify(app_error)}`,
-    );
-  }
+  await db.insert(errors).values(err);
 };
 
-export const addUserHistory = async (
-  supabase: SupabaseClient,
-  user: RequestUser,
+export const upsertUsers = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestUsers: RequestUser[],
 ) => {
-  const { id: user_id, email, name, avatar_url } = user;
-  const { data, error } = await supabase
-    .from("users")
-    .select("email, name, avatar_url")
-    .eq("id", user_id)
-    .order("id", { ascending: false })
-    .limit(1);
-  if (error) {
-    throw new AppError(`Failed to fetch user. Data: ${user_id}`);
-  }
-  if (
-    (data.length === 1 &&
-      (data[0].email !== email || data[0].name !== name ||
-        data[0].avatar_url !== avatar_url))
-  ) {
-    const new_user = { user_id, email, name, avatar_url };
-    const { error } = await supabase.from("user_history").insert([new_user]);
-    if (error) {
-      throw new AppError(
-        `Failed to insert user_history: ${error.message}. Data: ${
-          JSON.stringify(new_user)
-        }`,
-      );
+  const newUsers: User[] = requestUsers.map((u) => {
+    const { id, email, name, avatar_url } = u;
+    return { id, email, name, avatarUrl: avatar_url };
+  });
+  const ids: string[] = newUsers.map((u) => u.id!);
+  const existingUsers = await tx.select().from(users).where(
+    inArray(users.id, ids),
+  );
+  const changelogs: UserHistory[] = [];
+  for (const user of newUsers) {
+    const existingUser = existingUsers.find((u) => u.id === user.id);
+    console.log(existingUser?.avatarUrl);
+    console.log(user.avatarUrl);
+    console.log(existingUser?.avatarUrl !== user.avatarUrl);
+    if (
+      !existingUser || existingUser.email !== user.email ||
+      existingUser.name !== user.name ||
+      existingUser.avatarUrl !== user.avatarUrl
+    ) {
+      changelogs.push({
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        userId: user.id!,
+      });
     }
   }
-};
-
-export const upsertUser = async (
-  supabase: SupabaseClient,
-  user: RequestUser,
-) => {
-  const { error: upsertError } = await supabase
-    .from("users")
-    .upsert([
-      {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar_url: user.avatar_url,
-      },
-    ], { onConflict: "id" });
-  if (upsertError) {
-    throw new AppError(
-      `Failed to upsert author. Error: ${upsertError.message}, data: ${
-        JSON.stringify(user)
-      }`,
-    );
+  await tx.insert(users).values(newUsers).onConflictDoUpdate({
+    target: rules.id,
+    set: {
+      name: sql`excluded.name`,
+      email: sql`excluded.email`,
+      avatarUrl: sql`excluded.avatar_url`,
+    },
+  });
+  if (changelogs.length > 0) {
+    await tx.insert(userHistory).values(changelogs);
   }
 };

@@ -1,6 +1,6 @@
-import * as postgres from 'https://deno.land/x/postgres@v0.17.0/mod.ts'
-const databaseUrl = Deno.env.get('SUPABASE_DB_URL')!;
-export const pool = new postgres.Pool(databaseUrl, 1, false)
+import * as postgres from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+const databaseUrl = Deno.env.get("SUPABASE_DB_URL")!;
+export const pool = new postgres.Pool(databaseUrl, 1, false);
 export const selectQuery = `
   WITH RankedMessages AS (
     SELECT 

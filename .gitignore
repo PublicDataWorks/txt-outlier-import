@@ -10,3 +10,7 @@ venv/
 
 **/.env
 **/.temp
+
+**/node_modules
+
+**/.idea

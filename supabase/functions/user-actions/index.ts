@@ -1,14 +1,17 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js";
-import { AppError, RequestBody, RuleType } from "./types.ts";
+import { RequestBody, RuleType } from "./types.ts";
 import { handleError } from "./utils.ts";
-import { handle_new_comment } from "./new_comment.ts";
+import { handleNewComment } from "./handlers/comment-handler.ts";
+import { handleTeamChange } from "./handlers/team-handler.ts";
+
+import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
+import postgres from "npm:postgres";
+
+const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
+const db: PostgresJsDatabase = drizzle(client);
 
 Deno.serve(async (req) => {
-  const client = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
   let requestBody: RequestBody;
+
   try {
     requestBody = await req.json();
   } catch (err) {
@@ -17,20 +20,27 @@ Deno.serve(async (req) => {
   }
 
   try {
-    if (requestBody.rule.type === RuleType.NewComment) {
-      await handle_new_comment(client, requestBody);
+    switch (requestBody.rule.type) {
+      case RuleType.NewComment:
+        await handleNewComment(db, requestBody);
+        break;
+      case RuleType.TeamChanged:
+        await handleTeamChange(db, requestBody);
+        // Add more cases as needed for different rule types
+        break;
+      default:
+        throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);
     }
+
     console.log(`Successfully handled rule: ${requestBody.rule.id}`);
     return new Response("Ok", { status: 200 });
   } catch (err) {
     console.error(
       `An error occurred: ${err.message}.
-Request body: ${JSON.stringify(requestBody)}
-Stack trace: ${err.stack}`,
+    Request body: ${JSON.stringify(requestBody)}
+    Stack trace: ${err.stack}`,
     );
-    if (err instanceof AppError) {
-      await handleError(client, requestBody, err);
-    }
+    await handleError(db, requestBody, err);
     return new Response("", { status: 400 });
   }
 });
