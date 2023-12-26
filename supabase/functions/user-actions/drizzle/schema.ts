@@ -2,7 +2,6 @@ import {
   boolean,
   index,
   integer,
-  json,
   jsonb,
   pgEnum,
   pgTable,
@@ -46,15 +45,6 @@ export const requestStatus = pgEnum("request_status", [
   "ERROR",
 ]);
 
-export const errors = pgTable("errors", {
-  id: serial("id").primaryKey(),
-  requestBody: json("request_body").notNull(),
-  ruleType: text("rule_type"),
-  ruleId: uuid("rule_id"),
-  ruleDescription: text("rule_description"),
-  message: text("message").notNull(),
-});
-
 export const commentsMentions = pgTable("comments_mentions", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
@@ -65,22 +55,28 @@ export const commentsMentions = pgTable("comments_mentions", {
   userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   isUser: boolean("is_user").notNull(),
   teamId: uuid("team_id"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
 });
 
-export const labels = pgTable("labels", {
-  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+export const team = pgTable("team", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
-  uuid: uuid("uuid").defaultRandom().notNull(),
-  name: text("name").default("").notNull(),
-  nameWithParentNames: text("name_with_parent_names").default("").notNull(),
-  color: text("color"),
-  parent: uuid("parent"),
-  shareWithOrganization: boolean("share_with_organization").default(false)
-    .notNull(),
-  visibility: text("visibility"),
+  teamName: text("team_name"),
+  teamId: uuid("team_id"),
+  organization: uuid("organization"),
+  conversationId: uuid("conversation_id"),
+});
+
+export const errors = pgTable("errors", {
+  id: serial("id").primaryKey(),
+  requestBody: text("request_body").notNull(),
+  ruleType: text("rule_type"),
+  ruleId: uuid("rule_id"),
+  ruleDescription: text("rule_description"),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow().notNull(),
 });
 
 export const tasksAssignees = pgTable("tasks_assignees", {
@@ -90,11 +86,9 @@ export const tasksAssignees = pgTable("tasks_assignees", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
   commentId: uuid("comment_id").notNull().references(() => comments.id, {
     onDelete: "cascade",
-    onUpdate: "cascade",
   }),
   userId: uuid("user_id").notNull().references(() => users.id, {
     onDelete: "cascade",
-    onUpdate: "cascade",
   }),
 });
 
@@ -114,39 +108,68 @@ export const userHistory = pgTable("user_history", {
   };
 });
 
-export const conversation = pgTable("conversation", {
-  id: serial("id").primaryKey(),
+export const labels = pgTable("labels", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow().notNull(),
-  closed: boolean("closed").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+  name: text("name").default("").notNull(),
+  nameWithParentNames: text("name_with_parent_names").default("").notNull(),
+  color: text("color"),
+  parent: uuid("parent"),
+  shareWithOrganization: boolean("share_with_organization").default(false)
+    .notNull(),
+  visibility: text("visibility"),
+}, (table) => {
+  return {
+    labelsUuidKey: unique("labels_uuid_key").on(table.id),
+  };
 });
 
 export const conversationsLabels = pgTable("conversations_labels", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow().notNull(),
-  conversationUuid: uuid("conversation_uuid").references(
-    () => conversationLatest.uuid,
+  conversationId: uuid("conversation_id").notNull().references(
+    () => conversationLatest.id,
     { onDelete: "cascade" },
   ),
-  labelUuid: uuid("label_uuid").references(() => conversationLatest.uuid, {
+  labelId: uuid("label_id").notNull().references(() => labels.id, {
     onDelete: "cascade",
   }),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
 }, (table) => {
   return {
     conversationLabel: uniqueIndex("conversation_label").on(
-      table.conversationUuid,
-      table.labelUuid,
+      table.conversationId,
+      table.labelId,
     ),
   };
 });
 
-export const conversationLatest = pgTable("conversation_latest", {
+export const conversationsAssignees = pgTable("conversations_assignees", {
   id: serial("id").primaryKey(),
-  uuid: uuid("uuid").defaultRandom().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
     .defaultNow().notNull(),
+  unassigned: boolean("unassigned").default(false).notNull(),
+  closed: boolean("closed").default(false).notNull(),
+  archived: boolean("archived").default(false).notNull(),
+  trashed: boolean("trashed").default(false).notNull(),
+  junked: boolean("junked").default(false).notNull(),
+  assigned: boolean("assigned").default(false).notNull(),
+  flagged: boolean("flagged").default(false).notNull(),
+  snoozed: boolean("snoozed").default(false).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+  conversationId: uuid("conversation_id").notNull().references(
+    () => conversationLatest.id,
+    { onDelete: "cascade" },
+  ),
+});
+
+export const conversationLatest = pgTable("conversation_latest", {
+  id: uuid("id").defaultRandom().primaryKey().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .defaultNow().notNull(),
   messagesCount: integer("messages_count").default(0).notNull(),
   draftsCount: integer("drafts_count").default(0).notNull(),
   sendLaterMessagesCount: integer("send_later_messages_count").default(0)
@@ -161,10 +184,11 @@ export const conversationLatest = pgTable("conversation_latest", {
   sharedLabelNames: text("shared_label_names"),
   webUrl: text("web_url").notNull(),
   appUrl: text("app_url").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
 }, (table) => {
   return {
     conversationLatestUuidKey: unique("conversation_latest_uuid_key").on(
-      table.uuid,
+      table.id,
     ),
   };
 });
@@ -176,6 +200,10 @@ export const rules = pgTable("rules", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
   description: text("description").notNull(),
   type: text("type").notNull(),
+}, (table) => {
+  return {
+    rulesUuidKey: unique("rules_uuid_key").on(table.id),
+  };
 });
 
 export const comments = pgTable("comments", {
@@ -189,30 +217,25 @@ export const comments = pgTable("comments", {
     withTimezone: true,
     mode: "string",
   }),
-  authorId: uuid("author_id").notNull().references(() => users.id, {
-    onDelete: "cascade",
-  }),
+  authorId: uuid("author_id").notNull().references(() => users.id),
   isTask: boolean("is_task").default(false).notNull(),
+}, (table) => {
+  return {
+    commentsUuidKey: unique("comments_uuid_key").on(table.id),
+  };
 });
 
 export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-    .defaultNow().notNull(),
+  id: uuid("id").primaryKey().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
   email: text("email"),
   name: text("name"),
   avatarUrl: text("avatar_url"),
-});
-
-export const team = pgTable("team", {
-  id: serial("id").primaryKey(),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-    .defaultNow().notNull(),
-  teamName: text("team_name"),
-  teamId: uuid("team_id"),
-  organization: uuid("organization"),
-  conversationId: uuid("conversation_id"),
+}, (table) => {
+  return {
+    usersUuidKey: unique("users_uuid_key").on(table.id),
+  };
 });
 
 export type Rule = typeof rules.$inferInsert;

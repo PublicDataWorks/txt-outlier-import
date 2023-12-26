@@ -1,4 +1,9 @@
-import { AppError, RequestBody, RequestConvo, RequestRule, RequestUser } from "./types.ts";
+import {
+  RequestBody,
+  RequestConversation,
+  RequestRule,
+  RequestUser,
+} from "./types.ts";
 import {
   ConversationLatest,
   conversationLatest,
@@ -36,14 +41,14 @@ export const upsertRule = async (
 export const handleError = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
-  appError: AppError,
+  appError: Error,
 ) => {
   const err: Err = {
     ruleId: requestBody.rule.id,
     ruleDescription: requestBody.rule.description,
     ruleType: requestBody.rule.type,
     message: appError.message,
-    requestBody: requestBody,
+    requestBody: JSON.stringify(requestBody),
   };
   await db.insert(errors).values(err);
 };
@@ -64,9 +69,6 @@ export const upsertUsers = async (
   const changelogs: UserHistory[] = [];
   for (const user of newUsers) {
     const existingUser = existingUsers.find((u) => u.id === user.id);
-    console.log(existingUser?.avatarUrl);
-    console.log(user.avatarUrl);
-    console.log(existingUser?.avatarUrl !== user.avatarUrl);
     if (
       !existingUser || existingUser.email !== user.email ||
       existingUser.name !== user.name ||
@@ -93,9 +95,14 @@ export const upsertUsers = async (
   }
 };
 
-export const upsertLatestConversation = async (tx: PostgresJsTransaction<any, any>,  requestConvo: RequestConvo) => {
+export const upsertLatestConversation = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestConvo: RequestConversation,
+  closed: boolean,
+) => {
   const convo: ConversationLatest = {
-    uuid: requestConvo.id,
+    id: requestConvo.id,
     createdAt: String(new Date(requestConvo.created_at * 1000)),
     subject: requestConvo.subject,
     latestMessageSubject: requestConvo.latest_message_subject,
@@ -110,12 +117,24 @@ export const upsertLatestConversation = async (tx: PostgresJsTransaction<any, an
     sharedLabelNames: requestConvo.shared_label_names,
     webUrl: requestConvo.web_url,
     appUrl: requestConvo.app_url,
+    closed,
   };
   await tx.insert(conversationLatest).values(convo).onConflictDoUpdate({
-    target: conversationLatest.uuid,
+    target: conversationLatest.id,
     set: { ...convo },
   });
-}
+
+  const users: RequestUser[] = [];
+  for (const user of requestConvo.users) {
+    users.push({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatar_url: "",
+    });
+    await upsertUsers(tx, users);
+  }
+};
 
 // Function to replace placeholders in the template
 export function replacePlaceholders(template, replacements) {
