@@ -151,6 +151,7 @@ export const team = pgTable("team", {
   teamName: text("team_name"),
   teamId: uuid("team_id"),
   organization: uuid("organization"),
+  conversationId: uuid("conversation_id"),
 });
 
 export type Rule = typeof rules.$inferInsert;
