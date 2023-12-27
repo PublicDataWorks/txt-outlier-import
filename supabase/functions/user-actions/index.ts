@@ -88,8 +88,9 @@ Deno.serve(async (req) => {
         await handleLabelChange(db, requestBody);
         break;
       case RuleType.ConversationClosed:
-      case RuleType.ConversationAssignChange:
-        await handleConversationClosed(db, requestBody);
+      case RuleType.ConversationReopened:
+      case RuleType.ConversationAssigneeChange:
+        await handleConversationClosed(db, requestBody, requestBody.rule.type);
         break;
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);
