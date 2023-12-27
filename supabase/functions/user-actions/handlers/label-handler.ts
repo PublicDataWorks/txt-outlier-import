@@ -15,7 +15,7 @@ export const handleLabelChange = async (
 ) => {
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
-    await upsertConversation(tx, requestBody.conversation, null);
+    await upsertConversation(tx, requestBody.conversation);
     const requestLabels = new Set<Label>();
     const requestConversationsLabels = new Set<ConversationLabel>();
     for (const label of requestBody.conversation.shared_labels) {

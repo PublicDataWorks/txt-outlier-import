@@ -1,5 +1,4 @@
-import { pgTable, pgEnum, bigint, timestamp, uuid, boolean, text, index, unique, uniqueIndex, integer, jsonb } from "npm:drizzle-orm/pg-core"
-import {serial} from "npm:drizzle-orm/pg-core";
+import { pgTable, pgEnum, bigint, timestamp, uuid, boolean, text, index, unique, uniqueIndex, integer, jsonb, serial } from "npm:drizzle-orm/pg-core"
 
 export const keyStatus = pgEnum("key_status", ['default', 'valid', 'invalid', 'expired'])
 export const keyType = pgEnum("key_type", ['aead-ietf', 'aead-det', 'hmacsha512', 'hmacsha256', 'auth', 'shorthash', 'generichash', 'kdf', 'secretbox', 'secretstream', 'stream_xchacha20'])
@@ -11,7 +10,7 @@ export const requestStatus = pgEnum("request_status", ['PENDING', 'SUCCESS', 'ER
 
 
 export const commentsMentions = pgTable("comments_mentions", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
 	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" } ),
@@ -21,16 +20,15 @@ export const commentsMentions = pgTable("comments_mentions", {
 });
 
 export const team = pgTable("team", {
-	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	teamName: text("team_name"),
-	teamId: uuid("team_id"),
+	id: uuid("id").primaryKey().notNull(),
 	organization: uuid("organization"),
 	conversationId: uuid("conversation_id"),
 });
 
 export const errors = pgTable("errors", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	requestBody: text("request_body").notNull(),
 	ruleType: text("rule_type"),
 	ruleId: uuid("rule_id"),
@@ -40,7 +38,7 @@ export const errors = pgTable("errors", {
 });
 
 export const tasksAssignees = pgTable("tasks_assignees", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
@@ -48,7 +46,7 @@ export const tasksAssignees = pgTable("tasks_assignees", {
 });
 
 export const userHistory = pgTable("user_history", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text("name"),
 	email: text("email"),
@@ -79,7 +77,7 @@ export const labels = pgTable("labels", {
 });
 
 export const conversationsLabels = pgTable("conversations_labels", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
 	labelId: uuid("label_id").notNull().references(() => labels.id, { onDelete: "cascade" } ),
@@ -92,7 +90,7 @@ export const conversationsLabels = pgTable("conversations_labels", {
 });
 
 export const conversationsAssignees = pgTable("conversations_assignees", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	unassigned: boolean("unassigned").default(false).notNull(),
 	closed: boolean("closed").default(false).notNull(),
@@ -104,10 +102,11 @@ export const conversationsAssignees = pgTable("conversations_assignees", {
 	snoozed: boolean("snoozed").default(false).notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
 });
 
 export const conversationsUsers = pgTable("conversations_users", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
@@ -120,21 +119,54 @@ export const conversationsUsers = pgTable("conversations_users", {
 	assigned: boolean("assigned").default(false).notNull(),
 	flagged: boolean("flagged").default(false).notNull(),
 	snoozed: boolean("snoozed").default(false).notNull(),
+},
+(table) => {
+	return {
+		conversationsUsersUniqueKey: unique("conversations_users_unique_key").on(table.conversationId, table.userId),
+	}
 });
 
 export const conversationHistory = pgTable("conversation_history", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: "cascade" } ),
+	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
 	changeType: text("change_type"),
 });
 
+export const conversationsAuthors = pgTable("conversations_authors", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	authorId: bigint("author_id", { mode: "number" }).notNull().references(() => authors.id, { onDelete: "cascade" } ),
+});
+
+export const conversationsAssigneesHistory = pgTable("conversations_assignees_history", {
+	id: serial("id").primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	unassigned: boolean("unassigned").default(false).notNull(),
+	closed: boolean("closed").default(false).notNull(),
+	archived: boolean("archived").default(false).notNull(),
+	trashed: boolean("trashed").default(false).notNull(),
+	junked: boolean("junked").default(false).notNull(),
+	assigned: boolean("assigned").default(false).notNull(),
+	flagged: boolean("flagged").default(false).notNull(),
+	snoozed: boolean("snoozed").default(false).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	conversationHistoryId: bigint("conversation_history_id", { mode: "number" }).references(() => conversationHistory.id, { onDelete: "cascade" } ),
+});
+
 export const authors = pgTable("authors", {
-	id: serial('id').primaryKey(),
+	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	name: text("name"),
-	phoneNumber: text("phone_number"),
+	phoneNumber: text("phone_number").notNull(),
+},
+(table) => {
+	return {
+		authorsPhoneNumberKey: unique("authors_phone_number_key").on(table.phoneNumber),
+	}
 });
 
 export const conversations = pgTable("conversations", {
@@ -156,7 +188,6 @@ export const conversations = pgTable("conversations", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	closed: boolean("closed"),
 	organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" } ),
-	authorId: bigint("author_id", { mode: "number" }).references(() => authors.id, { onDelete: "cascade" } ),
 },
 (table) => {
 	return {
@@ -186,13 +217,13 @@ export const rules = pgTable("rules", {
 
 export const comments = pgTable("comments", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	body: text("body"),
 	attachment: jsonb("attachment"),
 	taskCompletedAt: timestamp("task_completed_at", { withTimezone: true, mode: 'string' }),
 	authorId: uuid("author_id").notNull().references(() => users.id),
 	isTask: boolean("is_task").default(false).notNull(),
 	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: "cascade" } ),
 },
 (table) => {
 	return {
@@ -226,3 +257,7 @@ export type Label = typeof labels.$inferInsert;
 export type ConversationLabel = typeof conversationsLabels.$inferInsert;
 export type Author = typeof authors.$inferInsert;
 export type ConversationUser = typeof conversationsUsers.$inferInsert;
+export type ConversationAssignee = typeof conversationsAssignees.$inferInsert;
+export type ConversationAssigneeHistory = typeof conversationsAssigneesHistory.$inferInsert;
+export type Organization = typeof organizations.$inferInsert;
+export type ConversationAuthor = typeof conversationsAuthors.$inferInsert;
