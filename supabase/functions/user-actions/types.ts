@@ -38,7 +38,8 @@ export enum RuleType {
   TeamChanged = "team_change",
   LabelChanged = "label_change",
   ConversationClosed = "conversation_closed",
-  ConversationAssignChange = "conversation_assignee_change",
+  ConversationReopened = "conversation_reopened",
+  ConversationAssigneeChange = "conversation_assignee_change",
 }
 
 export type MentionUser = {
@@ -58,6 +59,7 @@ export type RequestConversation = {
   created_at: number;
   subject: string | null;
   latest_message_subject: string | null;
+  organization: Organization;
   messages_count: number;
   drafts_count: number;
   send_later_messages_count: number;
@@ -71,6 +73,17 @@ export type RequestConversation = {
   app_url: string;
   shared_labels: RequestLabel[];
   users: ConversationUser[];
+  authors: RequestAuthor[];
+};
+
+export type Organization = {
+  id: string;
+  name: string;
+};
+
+export type RequestAuthor = {
+  name: string;
+  phone_number: string;
 };
 
 type ConversationUser = {

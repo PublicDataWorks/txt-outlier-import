@@ -5,7 +5,7 @@ import {
   Label,
   labels,
 } from "../drizzle/schema.ts";
-import { upsertLatestConversation, upsertRule } from "../utils.ts";
+import { upsertConversation, upsertRule } from "../utils.ts";
 import { RequestBody } from "../types.ts";
 import { eq, sql } from "npm:drizzle-orm";
 
@@ -15,7 +15,7 @@ export const handleLabelChange = async (
 ) => {
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
-    await upsertLatestConversation(tx, requestBody.conversation);
+    await upsertConversation(tx, requestBody.conversation, null);
     const requestLabels = new Set<Label>();
     const requestConversationsLabels = new Set<ConversationLabel>();
     for (const label of requestBody.conversation.shared_labels) {
