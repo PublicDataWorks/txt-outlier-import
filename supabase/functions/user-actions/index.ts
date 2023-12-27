@@ -6,7 +6,10 @@ import { handleTeamChange } from "./handlers/team-handler.ts";
 import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
 import postgres from "npm:postgres";
 import { handleLabelChange } from "./handlers/label-handler.ts";
-import { handleConversationClosed } from "./handlers/conversation-handler.ts";
+import {
+  handleConversationAssigneeChange,
+  handleConversationClosed,
+} from "./handlers/conversation-handler.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
@@ -35,8 +38,10 @@ Deno.serve(async (req) => {
         break;
       case RuleType.ConversationClosed:
       case RuleType.ConversationReopened:
-      case RuleType.ConversationAssigneeChange:
         await handleConversationClosed(db, requestBody, requestBody.rule.type);
+        break;
+      case RuleType.ConversationAssigneeChange:
+        await handleConversationAssigneeChange(db, requestBody);
         break;
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);

@@ -1,17 +1,25 @@
 import {
-  Organization,
   RequestAuthor,
   RequestBody,
   RequestConversation,
+  RequestOrganization,
   RequestRule,
   RequestUser,
   RuleType,
 } from "./types.ts";
 import {
+  Author,
   authors,
   Conversation,
+  ConversationAssignee,
+  ConversationAssigneeHistory,
+  ConversationAuthor,
   conversationHistory,
   conversations,
+  conversationsAssignees,
+  conversationsAssigneesHistory,
+  conversationsAuthors,
+  conversationsLabels,
   conversationsUsers,
   ConversationUser,
   Err,
@@ -30,17 +38,21 @@ import {
 } from "npm:drizzle-orm/postgres-js";
 import { inArray, sql } from "npm:drizzle-orm";
 import { eq } from "npm:drizzle-orm";
+import {
+  pruneConversation,
+  pruneConversationAssignee,
+  pruneConversationAssigneeHistory,
+  pruneConversationUser,
+  pruneOrg,
+  pruneRule,
+} from "./pruner.ts";
 
 export const upsertRule = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestRule: RequestRule,
 ) => {
-  const newRule: Rule = {
-    id: requestRule.id,
-    description: requestRule.description,
-    type: requestRule.type,
-  };
+  const newRule = pruneRule(requestRule);
   await tx.insert(rules).values(newRule).onConflictDoUpdate({
     target: rules.id,
     set: { description: newRule.description, type: newRule.type },
@@ -67,6 +79,8 @@ export const upsertUsers = async (
   tx: PostgresJsTransaction<any, any>,
   requestUsers: RequestUser[],
 ) => {
+  if (requestUsers.length === 0) return;
+
   const newUsers: User[] = requestUsers.map((
     { id, email, name, avatar_url },
   ) => ({ id, email, name, avatarUrl: avatar_url }));
@@ -103,85 +117,70 @@ export const upsertUsers = async (
   }
 };
 
-const upsertOrganization = async (
-  // deno-lint-ignore no-explicit-any
-  tx: PostgresJsTransaction<any, any>,
-  requestOrganization: Organization,
-) => {
-  const organization: Organization = {
-    id: requestOrganization.id,
-    name: requestOrganization.name,
-  };
-  await tx.insert(organizations).values(organization).onConflictDoUpdate({
-    target: organizations.id,
-    set: { ...organization },
-  });
-};
-
-const upsertAuthor = async (
-  tx: PostgresJsTransaction<any, any>,
-  request_authors: RequestAuthor[],
-) => {
-  if (request_authors.length > 0) {
-    const author = {
-      // TODO: handle multiple authors
-      name: request_authors[0].name,
-      phoneNumber: request_authors[0].phone_number,
-    };
-    await tx.insert(authors).values(author).onConflictDoUpdate({
-      target: authors.phoneNumber,
-      set: { name: author.name },
-    });
-  }
-};
-
 export const upsertConversation = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestConvo: RequestConversation,
-  changeType: string | null,
+  closed: boolean | null = null,
+  assignee_changed = false, // true: assignee changed handled by caller
 ) => {
+  // TODO: missing color field
   await upsertOrganization(tx, requestConvo.organization);
-  await upsertAuthor(tx, requestConvo.authors);
+  const inserted_ids: number[] = await upsertAuthor(tx, requestConvo.authors);
   // TODO: handle external authors
-  const existingConvo = await tx.select().from(conversations).where(
-    eq(conversations.id, requestConvo.id),
-  );
-  if (existingConvo.length > 0) {
-    const convoHistory = {
-      conversationId: requestConvo.id,
-      changeType: changeType,
-    };
-    await tx.insert(conversationHistory).values(convoHistory);
+  const convo = pruneConversation(requestConvo);
+  if (closed !== null) {
+    convo.closed = closed;
   }
-  const convo: Conversation = {
-    id: requestConvo.id,
-    createdAt: String(new Date(requestConvo.created_at * 1000)),
-    subject: requestConvo.subject,
-    latestMessageSubject: requestConvo.latest_message_subject,
-    messagesCount: requestConvo.messages_count,
-    draftsCount: requestConvo.drafts_count,
-    sendLaterMessagesCount: requestConvo.send_later_messages_count,
-    attachmentsCount: requestConvo.attachments_count,
-    tasksCount: requestConvo.tasks_count,
-    completedTasksCount: requestConvo.completed_tasks_count,
-    assigneeNames: requestConvo.assignee_names,
-    assigneeEmails: requestConvo.assignee_emails,
-    sharedLabelNames: requestConvo.shared_label_names,
-    webUrl: requestConvo.web_url,
-    appUrl: requestConvo.app_url,
-    organizationId: requestConvo.organization.id,
-    closed: changeType === RuleType.ConversationClosed
-      ? false
-      : changeType === RuleType.ConversationReopened
-      ? true
-      : undefined,
-  };
+  const assignees = [];
+  if (!assignee_changed) {
+    // This is an unsync convo, no assignee change emitted
+    const existingConvo = await tx.select().from(conversations).where(
+      eq(conversations.id, convo.id!),
+    );
+    if (existingConvo.length === 0 && requestConvo.assignees.length > 0) {
+      for (const assignee of requestConvo.assignees) {
+        assignees.push(pruneConversationAssignee(assignee, requestConvo.id));
+      }
+    }
+  }
   await tx.insert(conversations).values(convo).onConflictDoUpdate({
     target: conversations.id,
     set: { ...convo },
   });
+  const convoAuthors: ConversationAuthor[] = [];
+  for (const authorId of inserted_ids) {
+    convoAuthors.push({
+      conversationId: convo.id!,
+      authorId,
+    });
+  }
+  await tx.insert(conversationsAuthors).values(convoAuthors)
+    .onConflictDoNothing();
+  await upsertConversationsUsers(tx, requestConvo);
+  if (!assignee_changed && assignees.length > 0) {
+    await tx.insert(conversationsAssignees).values(assignees);
+  }
+};
 
+const upsertOrganization = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestOrganization: RequestOrganization,
+) => {
+  const org = pruneOrg(requestOrganization);
+  await tx.insert(organizations).values(org).onConflictDoUpdate({
+    target: organizations.id,
+    set: { name: org.name },
+  });
+};
+
+const upsertConversationsUsers = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestConvo: RequestConversation,
+) => {
+  if (requestConvo.users.length === 0) return;
   const users: RequestUser[] = [];
   const convoUser: ConversationUser[] = [];
   for (const user of requestConvo.users) {
@@ -191,18 +190,7 @@ export const upsertConversation = async (
       email: user.email,
       avatar_url: "",
     });
-    convoUser.push({
-      conversationId: convo.id!,
-      userId: user.id,
-      unassigned: user.unassigned,
-      closed: user.closed,
-      archived: user.archived,
-      trashed: user.trashed,
-      junked: user.junked,
-      assigned: user.assigned,
-      flagged: user.flagged,
-      snoozed: user.snoozed,
-    });
+    convoUser.push(pruneConversationUser(user, requestConvo.id));
   }
   await upsertUsers(tx, users);
   await tx.insert(conversationsUsers).values(convoUser).onConflictDoUpdate({
@@ -218,4 +206,31 @@ export const upsertConversation = async (
       snoozed: sql`excluded.snoozed`,
     },
   });
+};
+
+const upsertAuthor = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  request_authors: RequestAuthor[],
+): Promise<number[]> => {
+  if (request_authors.length === 0) return [];
+  const uniqueAuthors = new Set<Author>();
+  for (const author of request_authors) {
+    // TODO: Some authors have only name, no phone number
+    if (!author.phone_number) {
+      continue;
+    }
+    uniqueAuthors.add({
+      name: author.name,
+      phoneNumber: author.phone_number,
+    });
+  }
+  const inserted = await tx.insert(authors).values([...uniqueAuthors])
+    .onConflictDoUpdate({
+      target: authors.phoneNumber,
+      set: {
+        name: sql`excluded.name`,
+      },
+    }).returning({ insertedId: authors.id });
+  return inserted.map(({ insertedId }) => insertedId);
 };

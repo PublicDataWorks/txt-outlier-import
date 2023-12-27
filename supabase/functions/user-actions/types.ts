@@ -59,7 +59,7 @@ export type RequestConversation = {
   created_at: number;
   subject: string | null;
   latest_message_subject: string | null;
-  organization: Organization;
+  organization: RequestOrganization;
   messages_count: number;
   drafts_count: number;
   send_later_messages_count: number;
@@ -72,11 +72,12 @@ export type RequestConversation = {
   web_url: string;
   app_url: string;
   shared_labels: RequestLabel[];
-  users: ConversationUser[];
+  users: RequestConversationUser[];
   authors: RequestAuthor[];
+  assignees: RequestConversationUser[];
 };
 
-export type Organization = {
+export type RequestOrganization = {
   id: string;
   name: string;
 };
@@ -86,7 +87,7 @@ export type RequestAuthor = {
   phone_number: string;
 };
 
-type ConversationUser = {
+export type RequestConversationUser = {
   id: string;
   name: string;
   email: string;
@@ -100,7 +101,7 @@ type ConversationUser = {
   snoozed: boolean;
 };
 
-type RequestLabel = {
+export type RequestLabel = {
   id: string;
   name: string;
   name_with_parent_names: string;
