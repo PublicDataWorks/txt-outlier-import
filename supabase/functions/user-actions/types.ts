@@ -51,3 +51,10 @@ export type MentionTeam = {
 };
 
 export class AppError extends Error {}
+
+export interface ReplacementDictionary {
+  failureHost: string
+  failureDetails: string;
+  failedRequestDetails?: any | null;
+  failedRule: string | null;
+}
