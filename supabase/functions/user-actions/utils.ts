@@ -230,3 +230,10 @@ export const upsertAuthor = async (
       },
     }).returning();
 };
+
+// Function to replace placeholders in the template
+export function replacePlaceholders(template, replacements) {
+  return template.replace(/<%=\s*(\w+)\s*%>/g, (match, p1) => {
+    return replacements[p1] !== undefined ? replacements[p1] : match;
+  });
+}

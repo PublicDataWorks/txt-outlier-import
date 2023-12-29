@@ -143,3 +143,10 @@ export type TwilioRequestMessage = {
   attachments: string[];
   // TODO: author is missing
 };
+
+export interface ReplacementDictionary {
+  failureHost: string
+  failureDetails: string;
+  failedRequestDetails?: any | null;
+  failedRule: string | null;
+}
