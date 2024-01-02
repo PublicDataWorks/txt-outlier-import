@@ -10,6 +10,7 @@ import {
   handleConversationAssigneeChange,
   handleConversationClosed,
 } from "./handlers/conversation-handler.ts";
+import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
@@ -42,6 +43,9 @@ Deno.serve(async (req) => {
         break;
       case RuleType.ConversationAssigneeChange:
         await handleConversationAssigneeChange(db, requestBody);
+        break;
+      case RuleType.IncomingTwilioMessage:
+        await handleTwilioMessage(db, requestBody);
         break;
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);

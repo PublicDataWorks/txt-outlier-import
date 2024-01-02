@@ -5,27 +5,19 @@ import {
   RequestOrganization,
   RequestRule,
   RequestUser,
-  RuleType,
 } from "./types.ts";
 import {
   Author,
   authors,
-  Conversation,
-  ConversationAssignee,
-  ConversationAssigneeHistory,
   ConversationAuthor,
-  conversationHistory,
   conversations,
   conversationsAssignees,
-  conversationsAssigneesHistory,
   conversationsAuthors,
-  conversationsLabels,
   conversationsUsers,
   ConversationUser,
   Err,
   errors,
   organizations,
-  Rule,
   rules,
   User,
   UserHistory,
@@ -39,20 +31,19 @@ import {
 import { inArray, sql } from "npm:drizzle-orm";
 import { eq } from "npm:drizzle-orm";
 import {
-  pruneConversation,
-  pruneConversationAssignee,
-  pruneConversationAssigneeHistory,
-  pruneConversationUser,
-  pruneOrg,
-  pruneRule,
-} from "./pruner.ts";
+  adaptConversation,
+  adaptConversationAssignee,
+  adaptConversationUser,
+  adaptOrg,
+  adaptRule,
+} from "./adapters.ts";
 
 export const upsertRule = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestRule: RequestRule,
 ) => {
-  const newRule = pruneRule(requestRule);
+  const newRule = adaptRule(requestRule);
   await tx.insert(rules).values(newRule).onConflictDoUpdate({
     target: rules.id,
     set: { description: newRule.description, type: newRule.type },
@@ -93,13 +84,11 @@ export const upsertUsers = async (
     const existingUser = existingUsers.find((u) => u.id === user.id);
     if (
       !existingUser || existingUser.email !== user.email ||
-      existingUser.name !== user.name ||
-      existingUser.avatarUrl !== user.avatarUrl
+      existingUser.name !== user.name
     ) {
       changelogs.push({
         name: user.name,
         email: user.email,
-        avatarUrl: user.avatarUrl,
         userId: user.id!,
       });
     }
@@ -109,7 +98,6 @@ export const upsertUsers = async (
     set: {
       name: sql`excluded.name`,
       email: sql`excluded.email`,
-      avatarUrl: sql`excluded.avatar_url`,
     },
   });
   if (changelogs.length > 0) {
@@ -122,25 +110,32 @@ export const upsertConversation = async (
   tx: PostgresJsTransaction<any, any>,
   requestConvo: RequestConversation,
   closed: boolean | null = null,
-  assignee_changed = false, // true: assignee changed handled by caller
+  assigneeChanged = false, // true: assignee changed handled by caller
+  upsertOrg = true,
+  teamId: string | null = null,
 ) => {
   // TODO: missing color field
-  await upsertOrganization(tx, requestConvo.organization);
-  const inserted_ids: number[] = await upsertAuthor(tx, requestConvo.authors);
+  if (upsertOrg) {
+    await upsertOrganization(tx, requestConvo.organization);
+  }
+  const inserted: Author[] = await upsertAuthor(tx, requestConvo.authors);
   // TODO: handle external authors
-  const convo = pruneConversation(requestConvo);
+  const convo = adaptConversation(requestConvo);
   if (closed !== null) {
     convo.closed = closed;
   }
+  if (teamId) {
+    convo.teamId = teamId;
+  }
   const assignees = [];
-  if (!assignee_changed) {
+  if (!assigneeChanged) {
     // This is an unsync convo, no assignee change emitted
     const existingConvo = await tx.select().from(conversations).where(
       eq(conversations.id, convo.id!),
     );
     if (existingConvo.length === 0 && requestConvo.assignees.length > 0) {
       for (const assignee of requestConvo.assignees) {
-        assignees.push(pruneConversationAssignee(assignee, requestConvo.id));
+        assignees.push(adaptConversationAssignee(assignee, requestConvo.id));
       }
     }
   }
@@ -149,26 +144,26 @@ export const upsertConversation = async (
     set: { ...convo },
   });
   const convoAuthors: ConversationAuthor[] = [];
-  for (const authorId of inserted_ids) {
+  for (const author of inserted) {
     convoAuthors.push({
       conversationId: convo.id!,
-      authorId,
+      authorPhoneNumber: author.phoneNumber,
     });
   }
   await tx.insert(conversationsAuthors).values(convoAuthors)
     .onConflictDoNothing();
   await upsertConversationsUsers(tx, requestConvo);
-  if (!assignee_changed && assignees.length > 0) {
+  if (!assigneeChanged && assignees.length > 0) {
     await tx.insert(conversationsAssignees).values(assignees);
   }
 };
 
-const upsertOrganization = async (
+export const upsertOrganization = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestOrganization: RequestOrganization,
 ) => {
-  const org = pruneOrg(requestOrganization);
+  const org = adaptOrg(requestOrganization);
   await tx.insert(organizations).values(org).onConflictDoUpdate({
     target: organizations.id,
     set: { name: org.name },
@@ -190,7 +185,7 @@ const upsertConversationsUsers = async (
       email: user.email,
       avatar_url: "",
     });
-    convoUser.push(pruneConversationUser(user, requestConvo.id));
+    convoUser.push(adaptConversationUser(user, requestConvo.id));
   }
   await upsertUsers(tx, users);
   await tx.insert(conversationsUsers).values(convoUser).onConflictDoUpdate({
@@ -208,11 +203,11 @@ const upsertConversationsUsers = async (
   });
 };
 
-const upsertAuthor = async (
+export const upsertAuthor = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   request_authors: RequestAuthor[],
-): Promise<number[]> => {
+): Promise<Author[]> => {
   if (request_authors.length === 0) return [];
   const uniqueAuthors = new Set<Author>();
   for (const author of request_authors) {
@@ -225,12 +220,11 @@ const upsertAuthor = async (
       phoneNumber: author.phone_number,
     });
   }
-  const inserted = await tx.insert(authors).values([...uniqueAuthors])
+  return await tx.insert(authors).values([...uniqueAuthors])
     .onConflictDoUpdate({
       target: authors.phoneNumber,
       set: {
         name: sql`excluded.name`,
       },
-    }).returning({ insertedId: authors.id });
-  return inserted.map(({ insertedId }) => insertedId);
+    }).returning();
 };

@@ -1,34 +1,24 @@
-import { pgTable, pgEnum, bigint, timestamp, uuid, boolean, text, index, unique, uniqueIndex, integer, jsonb, serial } from "npm:drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, text, uuid, bigint, unique, boolean, uniqueIndex, index, integer } from "npm:drizzle-orm/pg-core"
 
-export const keyStatus = pgEnum("key_status", ['default', 'valid', 'invalid', 'expired'])
-export const keyType = pgEnum("key_type", ['aead-ietf', 'aead-det', 'hmacsha512', 'hmacsha256', 'auth', 'shorthash', 'generichash', 'kdf', 'secretbox', 'secretstream', 'stream_xchacha20'])
-export const factorType = pgEnum("factor_type", ['totp', 'webauthn'])
-export const factorStatus = pgEnum("factor_status", ['unverified', 'verified'])
-export const aalLevel = pgEnum("aal_level", ['aal1', 'aal2', 'aal3'])
-export const codeChallengeMethod = pgEnum("code_challenge_method", ['s256', 'plain'])
-export const requestStatus = pgEnum("request_status", ['PENDING', 'SUCCESS', 'ERROR'])
-
-
-export const commentsMentions = pgTable("comments_mentions", {
-	id: serial("id").primaryKey(),
+export const teams = pgTable("teams", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
-	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" } ),
-	isUser: boolean("is_user").notNull(),
-	teamId: uuid("team_id"),
+	name: text("name"),
+	id: uuid("id").primaryKey().notNull(),
+	organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" } ),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
-export const team = pgTable("team", {
+export const commentsMentions = pgTable("comments_mentions", {
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	teamName: text("team_name"),
-	id: uuid("id").primaryKey().notNull(),
-	organization: uuid("organization"),
-	conversationId: uuid("conversation_id"),
+	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
+	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" } ),
+	teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" } ),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 });
 
 export const errors = pgTable("errors", {
-	id: serial("id").primaryKey(),
+	id: serial('id').primaryKey(),
 	requestBody: text("request_body").notNull(),
 	ruleType: text("rule_type"),
 	ruleId: uuid("rule_id"),
@@ -38,25 +28,11 @@ export const errors = pgTable("errors", {
 });
 
 export const tasksAssignees = pgTable("tasks_assignees", {
-	id: serial("id").primaryKey(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	commentId: uuid("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" } ),
 	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
-});
-
-export const userHistory = pgTable("user_history", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text("name"),
-	email: text("email"),
-	avatarUrl: text("avatar_url"),
-	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
-},
-(table) => {
-	return {
-		idxUserHistoryId: index("idx_user_history_id").on(table.id),
-	}
 });
 
 export const labels = pgTable("labels", {
@@ -77,7 +53,7 @@ export const labels = pgTable("labels", {
 });
 
 export const conversationsLabels = pgTable("conversations_labels", {
-	id: serial("id").primaryKey(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
 	labelId: uuid("label_id").notNull().references(() => labels.id, { onDelete: "cascade" } ),
@@ -89,8 +65,21 @@ export const conversationsLabels = pgTable("conversations_labels", {
 	}
 });
 
+export const userHistory = pgTable("user_history", {
+	id: serial('id').primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text("name"),
+	email: text("email"),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
+},
+(table) => {
+	return {
+		idxUserHistoryId: index("idx_user_history_id").on(table.id),
+	}
+});
+
 export const conversationsAssignees = pgTable("conversations_assignees", {
-	id: serial("id").primaryKey(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	unassigned: boolean("unassigned").default(false).notNull(),
 	closed: boolean("closed").default(false).notNull(),
@@ -105,8 +94,38 @@ export const conversationsAssignees = pgTable("conversations_assignees", {
 	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
 });
 
+export const conversationHistory = pgTable("conversation_history", {
+	id: serial('id').primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
+	changeType: text("change_type"),
+	teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" } ),
+});
+
+export const conversationsAssigneesHistory = pgTable("conversations_assignees_history", {
+	id: serial('id').primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	unassigned: boolean("unassigned").default(false).notNull(),
+	closed: boolean("closed").default(false).notNull(),
+	archived: boolean("archived").default(false).notNull(),
+	trashed: boolean("trashed").default(false).notNull(),
+	junked: boolean("junked").default(false).notNull(),
+	assigned: boolean("assigned").default(false).notNull(),
+	flagged: boolean("flagged").default(false).notNull(),
+	snoozed: boolean("snoozed").default(false).notNull(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	conversationHistoryId: bigint("conversation_history_id", { mode: "number" }).references(() => conversationHistory.id, { onDelete: "cascade" } ),
+});
+
+export const conversationsAuthors = pgTable("conversations_authors", {
+	id: serial('id').primaryKey(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
+	authorPhoneNumber: text("author_phone_number").notNull().references(() => authors.phoneNumber, { onDelete: "cascade" } ),
+});
+
 export const conversationsUsers = pgTable("conversations_users", {
-	id: serial("id").primaryKey(),
+	id: serial('id').primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
@@ -126,42 +145,27 @@ export const conversationsUsers = pgTable("conversations_users", {
 	}
 });
 
-export const conversationHistory = pgTable("conversation_history", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
-	changeType: text("change_type"),
-});
-
-export const conversationsAuthors = pgTable("conversations_authors", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" } ),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	authorId: bigint("author_id", { mode: "number" }).notNull().references(() => authors.id, { onDelete: "cascade" } ),
-});
-
-export const conversationsAssigneesHistory = pgTable("conversations_assignees_history", {
-	id: serial("id").primaryKey(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	unassigned: boolean("unassigned").default(false).notNull(),
-	closed: boolean("closed").default(false).notNull(),
-	archived: boolean("archived").default(false).notNull(),
-	trashed: boolean("trashed").default(false).notNull(),
-	junked: boolean("junked").default(false).notNull(),
-	assigned: boolean("assigned").default(false).notNull(),
-	flagged: boolean("flagged").default(false).notNull(),
-	snoozed: boolean("snoozed").default(false).notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	conversationHistoryId: bigint("conversation_history_id", { mode: "number" }).references(() => conversationHistory.id, { onDelete: "cascade" } ),
+export const twilioMessages = pgTable("twilio_messages", {
+	id: uuid("id").defaultRandom().primaryKey().notNull(),
+	preview: text("preview").notNull(),
+	type: text("type"),
+	deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: 'string' }).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
+	references: text("references").array().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+	externalId: text("external_id"),
+	attachments: text("attachments"),
+	fromField: text("fromField").notNull().references(() => authors.phoneNumber, { onDelete: "cascade" } ),
+	toField: text("toField").notNull().references(() => authors.phoneNumber, { onDelete: "cascade" } ),
+	accountAuthor: text("accountAuthor").notNull().references(() => authors.phoneNumber, { onDelete: "cascade" } ),
+	accountRecipient: text("accountRecipient").notNull().references(() => authors.phoneNumber, { onDelete: "cascade" } ),
 });
 
 export const authors = pgTable("authors", {
-	id: serial("id").primaryKey(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	name: text("name"),
-	phoneNumber: text("phone_number").notNull(),
+	phoneNumber: text("phone_number").primaryKey().notNull(),
 },
 (table) => {
 	return {
@@ -188,6 +192,7 @@ export const conversations = pgTable("conversations", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }),
 	closed: boolean("closed"),
 	organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "cascade" } ),
+	teamId: uuid("team_id").references(() => teams.id, { onDelete: "cascade" } ),
 },
 (table) => {
 	return {
@@ -218,12 +223,12 @@ export const rules = pgTable("rules", {
 export const comments = pgTable("comments", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	body: text("body"),
-	attachment: jsonb("attachment"),
 	taskCompletedAt: timestamp("task_completed_at", { withTimezone: true, mode: 'string' }),
-	authorId: uuid("author_id").notNull().references(() => users.id),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
 	isTask: boolean("is_task").default(false).notNull(),
 	id: uuid("id").defaultRandom().primaryKey().notNull(),
 	conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: "cascade" } ),
+	attachment: text("attachment"),
 },
 (table) => {
 	return {
@@ -251,7 +256,7 @@ export type UserHistory = typeof userHistory.$inferInsert;
 export type Err = typeof errors.$inferInsert;
 export type Comment = typeof comments.$inferInsert;
 export type CommentMention = typeof commentsMentions.$inferInsert;
-export type Team = typeof team.$inferInsert;
+export type Team = typeof teams.$inferInsert;
 export type Conversation = typeof conversations.$inferInsert;
 export type Label = typeof labels.$inferInsert;
 export type ConversationLabel = typeof conversationsLabels.$inferInsert;
@@ -261,3 +266,4 @@ export type ConversationAssignee = typeof conversationsAssignees.$inferInsert;
 export type ConversationAssigneeHistory = typeof conversationsAssigneesHistory.$inferInsert;
 export type Organization = typeof organizations.$inferInsert;
 export type ConversationAuthor = typeof conversationsAuthors.$inferInsert;
+export type TwilioMessage = typeof twilioMessages.$inferInsert;
