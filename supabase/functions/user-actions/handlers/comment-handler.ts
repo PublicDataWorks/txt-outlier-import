@@ -2,7 +2,6 @@ import {
 MentionTeam,
 MentionUser,
   RequestBody,
-  RequestComment,
   RequestTask,
 } from "../types.ts";
 import {upsertConversation, upsertRule, upsertUsers} from "../utils.ts";
@@ -13,10 +12,12 @@ import {
 import {
   Comment,
   CommentMention,
+  Team,
   comments,
   commentsMentions,
-  tasksAssignees,
+  tasksAssignees, teams,
 } from "../drizzle/schema.ts";
+import { sql } from "npm:drizzle-orm";
 
 export const handleNewComment = async (
   db: PostgresJsDatabase,
@@ -25,10 +26,10 @@ export const handleNewComment = async (
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
     const users = [
-      requestBody.comment.author,
-      ...requestBody.comment.task?.assignees ?? [],
+      requestBody.comment!.author,
+      ...requestBody.comment!.task?.assignees ?? [],
     ];
-    const mentions = requestBody.comment.mentions;
+    const mentions = requestBody.comment!.mentions;
     for (const mention of mentions) {
       if ("user_id" in mention) {
         users.push({
@@ -53,7 +54,7 @@ const insertComment = async (
   tx: PostgresJsTransaction<any, any>,
   requestBody: RequestBody,
 ) => {
-  const requestComment = requestBody.comment;
+  const requestComment = requestBody.comment!;
   const comment: Comment = {
     id: requestComment.id,
     body: requestComment.body,
@@ -63,14 +64,14 @@ const insertComment = async (
       ? String(new Date(requestComment.task.completed_at * 1000))
       : null,
     isTask: !!requestComment.task,
-    authorId: requestComment.author.id!,
+    userId: requestComment.author.id!,
     conversationId: requestBody.conversation.id,
   };
   await tx.insert(comments).values(comment);
   if (requestComment.task) {
     await insertTask(tx, requestComment.task, requestComment.id);
   }
-  await insertMentions(tx, requestComment.mentions, requestComment.id);
+  await insertMentions(tx, requestBody);
 };
 
 const insertTask = async (
@@ -98,36 +99,45 @@ const insertTask = async (
 const insertMentions = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
-  mentions: (MentionUser | MentionTeam)[],
-  commentId: string,
+  requestBody: RequestBody,
 ) => {
+  const mentions: (MentionUser | MentionTeam)[] = requestBody.comment!.mentions;
   if (mentions.length === 0) return;
-  const mentionData: CommentMention[] = [];
+  const mentionedData: CommentMention[] = [];
+  const mentionedTeams: Team[] = [];
   for (const mention of mentions) {
     if ("user_id" in mention) {
-      mentionData.push({
-        commentId: commentId,
+      mentionedData.push({
+        commentId: requestBody.comment!.id,
         userId: mention.user_id,
         teamId: null,
-        isUser: true,
       });
     } else if ("team_id" in mention) {
-      mentionData.push({
-        commentId: commentId,
+      mentionedData.push({
+        commentId: requestBody.comment!.id,
         userId: null,
         teamId: mention.team_id,
-        isUser: false,
       });
+      mentionedTeams.push({
+        id: mention.team_id,
+        name: "",
+        organizationId: requestBody.conversation.organization.id,
+      })
     }
   }
-  const uniqueMentions = mentionData.filter((current, index, array) =>
+  if (mentionedTeams.length > 0) {
+    await tx.insert(teams).values(mentionedTeams).onConflictDoUpdate({
+      target: teams.id,
+      set: { organizationId: sql`excluded.organization_id`},
+    });
+  }
+  const uniqueMentions = mentionedData.filter((current, index, array) =>
     array.findIndex(
       (e) => (e.userId === current.userId && e.teamId === current.teamId),
     ) === index
   );
 
   // TODO: mention all
-  // TODO: Exclude team_id for now
   await tx
     .insert(commentsMentions)
     .values(uniqueMentions);

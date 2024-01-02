@@ -4,16 +4,19 @@ import {
   ConversationUser,
   Organization,
   Rule,
+  TwilioMessage,
 } from "./drizzle/schema.ts";
 import {
+  RequestAuthor,
   RequestConversation,
   RequestConversationUser,
   RequestOrganization,
   RequestRule,
-  RuleType,
+  TwilioRequestAuthor,
+  TwilioRequestMessage,
 } from "./types.ts";
 
-export const pruneConversation = (
+export const adaptConversation = (
   requestConvo: RequestConversation,
 ): Conversation => {
   return {
@@ -36,7 +39,7 @@ export const pruneConversation = (
   };
 };
 
-export const pruneRule = (requestRule: RequestRule): Rule => {
+export const adaptRule = (requestRule: RequestRule): Rule => {
   return {
     id: requestRule.id,
     description: requestRule.description,
@@ -44,14 +47,14 @@ export const pruneRule = (requestRule: RequestRule): Rule => {
   };
 };
 
-export const pruneOrg = (requestOrg: RequestOrganization): Organization => {
+export const adaptOrg = (requestOrg: RequestOrganization): Organization => {
   return {
     id: requestOrg.id,
     name: requestOrg.name,
   };
 };
 
-export const pruneConversationUser = (
+export const adaptConversationUser = (
   user: RequestConversationUser,
   conversationId: string,
 ): ConversationUser => {
@@ -69,7 +72,7 @@ export const pruneConversationUser = (
   };
 };
 
-export const pruneConversationAssignee = (
+export const adaptConversationAssignee = (
   assignee: RequestConversationUser,
   conversationId: string,
 ): ConversationUser => {
@@ -87,7 +90,7 @@ export const pruneConversationAssignee = (
   };
 };
 
-export const pruneConversationAssigneeHistory = (
+export const adaptConversationAssigneeHistory = (
   assignee: RequestConversationUser,
   conversationHistoryId: number,
 ): ConversationAssigneeHistory => {
@@ -101,5 +104,36 @@ export const pruneConversationAssigneeHistory = (
     flagged: assignee.flagged,
     snoozed: assignee.snoozed,
     conversationHistoryId,
+  };
+};
+
+export const adaptTwilioRequestAuthor = (
+  twilioUser: TwilioRequestAuthor,
+): RequestAuthor => {
+  return {
+    name: twilioUser.name,
+    phone_number: twilioUser.id,
+  };
+};
+
+export const adaptTwilioMessage = (
+  requestMessage: TwilioRequestMessage,
+  fromField: string,
+  toField: string,
+  accountAuthor: string,
+  accountRecipient: string,
+): TwilioMessage => {
+  return {
+    id: requestMessage.id,
+    preview: requestMessage.preview,
+    type: requestMessage.type,
+    deliveredAt: String(new Date(requestMessage.delivered_at * 1000)),
+    updatedAt: String(new Date(requestMessage.updated_at * 1000)),
+    createdAt: String(new Date(requestMessage.created_at * 1000)),
+    references: requestMessage.references,
+    fromField,
+    toField,
+    accountAuthor,
+    accountRecipient,
   };
 };
