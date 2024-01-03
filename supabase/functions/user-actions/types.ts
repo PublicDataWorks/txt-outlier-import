@@ -23,14 +23,21 @@ export type RequestTask = {
 export type RequestBody = {
   rule: RequestRule;
   conversation: RequestConversation;
-  comment: RequestComment;
-  latest_message: object;
+  comment?: RequestComment;
+  latest_message?: object;
+  message?: TwilioRequestMessage;
 };
 
 export type RequestRule = {
   id: string;
   description: string;
   type: RuleType;
+};
+
+export type RequestTeam = {
+  id: string;
+  name: string;
+  organization: string;
 };
 
 export enum RuleType {
@@ -40,6 +47,7 @@ export enum RuleType {
   ConversationClosed = "conversation_closed",
   ConversationReopened = "conversation_reopened",
   ConversationAssigneeChange = "conversation_assignee_change",
+  IncomingTwilioMessage = "incoming_twilio_message",
 }
 
 export type MentionUser = {
@@ -75,6 +83,7 @@ export type RequestConversation = {
   users: RequestConversationUser[];
   authors: RequestAuthor[];
   assignees: RequestConversationUser[];
+  team?: RequestTeam;
 };
 
 export type RequestOrganization = {
@@ -110,4 +119,27 @@ export type RequestLabel = {
   parent: string | null;
   share_with_organization: boolean;
   visibility: string | null;
+};
+
+export type TwilioRequestAuthor = {
+  id: string;
+  name: string;
+  username: string;
+};
+
+export type TwilioRequestMessage = {
+  id: string;
+  preview: string;
+  type: string;
+  delivered_at: number;
+  updated_at: number;
+  created_at: number;
+  references: string[];
+  from_field: TwilioRequestAuthor;
+  to_fields: TwilioRequestAuthor[];
+  external_id: string;
+  account_author: TwilioRequestAuthor;
+  account_recipients: TwilioRequestAuthor[];
+  attachments: string[];
+  // TODO: author is missing
 };
