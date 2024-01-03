@@ -1,5 +1,7 @@
-import { AppError, RequestBody, RequestRule, RequestUser } from "./types.ts";
+import { AppError, RequestBody, RequestConvo, RequestRule, RequestUser } from "./types.ts";
 import {
+ConversationLatest,
+conversationLatest,
   Err,
   errors,
   Rule,
@@ -90,3 +92,27 @@ export const upsertUsers = async (
     await tx.insert(userHistory).values(changelogs);
   }
 };
+
+export const upsertLatestConversation = async (tx: PostgresJsTransaction<any, any>,  requestConvo: RequestConvo) => {
+  const convo: ConversationLatest = {
+    uuid: requestConvo.id,
+    createdAt: String(new Date(requestConvo.created_at * 1000)),
+    subject: requestConvo.subject,
+    latestMessageSubject: requestConvo.latest_message_subject,
+    messagesCount: requestConvo.messages_count,
+    draftsCount: requestConvo.drafts_count,
+    sendLaterMessagesCount: requestConvo.send_later_messages_count,
+    attachmentsCount: requestConvo.attachments_count,
+    tasksCount: requestConvo.tasks_count,
+    completedTasksCount: requestConvo.completed_tasks_count,
+    assigneeNames: requestConvo.assignee_names,
+    assigneeEmails: requestConvo.assignee_emails,
+    sharedLabelNames: requestConvo.shared_label_names,
+    webUrl: requestConvo.web_url,
+    appUrl: requestConvo.app_url,
+  };
+  await tx.insert(conversationLatest).values(convo).onConflictDoUpdate({
+    target: conversationLatest.uuid,
+    set: { ...convo },
+  });
+}
