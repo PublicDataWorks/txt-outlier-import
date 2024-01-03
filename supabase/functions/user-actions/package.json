@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "introspect": "drizzle-kit introspect:pg"
+    "introspect": "drizzle-kit introspect:pg",
+    "migration:generate": "drizzle-kit generate:pg --schema=./drizzle/schema.ts"
   },
   "author": "Outlier Media",
   "license": "",

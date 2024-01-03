@@ -1,11 +1,11 @@
 import {
-  MentionTeam,
-  MentionUser,
+MentionTeam,
+MentionUser,
   RequestBody,
   RequestComment,
   RequestTask,
 } from "../types.ts";
-import { upsertRule, upsertUsers } from "../utils.ts";
+import {upsertConversation, upsertRule, upsertUsers} from "../utils.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,
@@ -43,15 +43,17 @@ export const handleNewComment = async (
       array.findIndex((e) => (e.id === current.id)) === index
     );
     await upsertUsers(tx, uniqueUsers);
-    await insertComment(tx, requestBody.comment);
+    await upsertConversation(tx, requestBody.conversation);
+    await insertComment(tx, requestBody);
   });
 };
 
 const insertComment = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
-  requestComment: RequestComment,
+  requestBody: RequestBody,
 ) => {
+  const requestComment = requestBody.comment;
   const comment: Comment = {
     id: requestComment.id,
     body: requestComment.body,
@@ -62,14 +64,13 @@ const insertComment = async (
       : null,
     isTask: !!requestComment.task,
     authorId: requestComment.author.id!,
+    conversationId: requestBody.conversation.id,
   };
   await tx.insert(comments).values(comment);
   if (requestComment.task) {
     await insertTask(tx, requestComment.task, requestComment.id);
   }
-  if (requestComment.mentions.length > 0) {
-    await insertMentions(tx, requestComment.mentions, requestComment.id);
-  }
+  await insertMentions(tx, requestComment.mentions, requestComment.id);
 };
 
 const insertTask = async (
@@ -78,6 +79,7 @@ const insertTask = async (
   task: RequestTask,
   commentId: string,
 ) => {
+  if (task.assignees.length === 0) return;
   const assignees = [];
   for (const assignee of task.assignees) {
     assignees.push({
@@ -88,11 +90,9 @@ const insertTask = async (
   const uniqueAssignees = assignees.filter((current, index, array) =>
     array.findIndex((e) => (e.userId === current.userId)) === index
   );
-  if (uniqueAssignees.length > 0) {
-    await tx
-      .insert(tasksAssignees)
-      .values(uniqueAssignees);
-  }
+  await tx
+    .insert(tasksAssignees)
+    .values(uniqueAssignees);
 };
 
 const insertMentions = async (
@@ -101,6 +101,7 @@ const insertMentions = async (
   mentions: (MentionUser | MentionTeam)[],
   commentId: string,
 ) => {
+  if (mentions.length === 0) return;
   const mentionData: CommentMention[] = [];
   for (const mention of mentions) {
     if ("user_id" in mention) {
@@ -126,10 +127,8 @@ const insertMentions = async (
   );
 
   // TODO: mention all
-  if (uniqueMentions.length > 0) {
-    // TODO: Exclude team_id for now
-    await tx
-      .insert(commentsMentions)
-      .values(uniqueMentions);
-  }
+  // TODO: Exclude team_id for now
+  await tx
+    .insert(commentsMentions)
+    .values(uniqueMentions);
 };
