@@ -143,15 +143,17 @@ export const upsertConversation = async (
     target: conversations.id,
     set: { ...convo },
   });
-  const convoAuthors: ConversationAuthor[] = [];
-  for (const author of inserted) {
-    convoAuthors.push({
-      conversationId: convo.id!,
-      authorPhoneNumber: author.phoneNumber,
-    });
+  if (inserted.length > 0) {
+    const convoAuthors: ConversationAuthor[] = [];
+    for (const author of inserted) {
+      convoAuthors.push({
+        conversationId: convo.id!,
+        authorPhoneNumber: author.phoneNumber,
+      });
+    }
+    await tx.insert(conversationsAuthors).values(convoAuthors)
+      .onConflictDoNothing();
   }
-  await tx.insert(conversationsAuthors).values(convoAuthors)
-    .onConflictDoNothing();
   await upsertConversationsUsers(tx, requestConvo);
   if (!assigneeChanged && assignees.length > 0) {
     await tx.insert(conversationsAssignees).values(assignees);
