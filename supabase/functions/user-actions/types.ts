@@ -16,7 +16,7 @@ export type RequestUser = {
 };
 
 export type RequestTask = {
-  completed_at: number;
+  completed_at: number | null;
   assignees: RequestUser[];
 };
 
@@ -31,7 +31,7 @@ export type RequestBody = {
 export type RequestRule = {
   id: string;
   description: string;
-  type: RuleType;
+  type: string;
 };
 
 export type RequestTeam = {

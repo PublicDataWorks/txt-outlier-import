@@ -4,7 +4,7 @@ import {RequestBody, RequestConversation, RuleType} from "../types.ts";
 import {
   ConversationAssignee, ConversationAssigneeHistory,
   conversationHistory,
-  conversationsAssignees, conversationsAssigneesHistory,
+  conversationsAssignees, conversationsAssigneesHistory, teams,
 } from "../drizzle/schema.ts";
 import {eq} from "npm:drizzle-orm";
 import {adaptConversationAssignee, adaptConversationAssigneeHistory} from "../adapters.ts";
@@ -16,7 +16,17 @@ export const handleConversationClosed = async (
 ) => {
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
-    await upsertConversation(tx, requestBody.conversation, changeType === RuleType.ConversationClosed);
+    await tx.insert(teams).values({ id: requestBody.conversation.team!.id }).onConflictDoNothing()
+    await upsertConversation(tx, requestBody.conversation, changeType === RuleType.ConversationClosed, false, true, requestBody.conversation.team!.id);
+    const teamData = {
+      id: requestBody.conversation.team!.id,
+      name: requestBody.conversation.team!.name,
+      organizationId: requestBody.conversation.organization.id,
+    };
+    await tx.insert(teams).values(teamData).onConflictDoUpdate({
+      target: teams.id,
+      set: {name: teamData.name, organizationId: teamData.organizationId},
+    });
     const convoHistory = {
       conversationId: requestBody.conversation.id,
       changeType: changeType,
