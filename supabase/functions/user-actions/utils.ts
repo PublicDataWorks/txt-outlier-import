@@ -223,12 +223,7 @@ export const upsertAuthor = async (
     });
   }
   return await tx.insert(authors).values([...uniqueAuthors])
-    .onConflictDoUpdate({
-      target: authors.phoneNumber,
-      set: {
-        name: sql`excluded.name`,
-      },
-    }).returning();
+    .onConflictDoNothing().returning();
 };
 
 // Function to replace placeholders in the template

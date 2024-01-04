@@ -1,7 +1,11 @@
-import {PostgresJsDatabase} from "npm:drizzle-orm/postgres-js";
-import {conversationHistory, teams} from "../drizzle/schema.ts";
-import {upsertConversation, upsertOrganization, upsertRule} from "../utils.ts";
-import {RequestBody, RuleType} from "../types.ts";
+import { PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
+import { conversationHistory, teams } from "../drizzle/schema.ts";
+import {
+  upsertConversation,
+  upsertOrganization,
+  upsertRule,
+} from "../utils.ts";
+import { RequestBody, RuleType } from "../types.ts";
 
 export const handleTeamChange = async (
   db: PostgresJsDatabase,
@@ -17,13 +21,20 @@ export const handleTeamChange = async (
     };
     await tx.insert(teams).values(teamData).onConflictDoUpdate({
       target: teams.id,
-      set: {name: teamData.name, organizationId: teamData.organizationId},
+      set: { name: teamData.name, organizationId: teamData.organizationId },
     });
-    await upsertConversation(tx, requestBody.conversation, null, false, false, requestBody.conversation.team!.id);
+    await upsertConversation(
+      tx,
+      requestBody.conversation,
+      null,
+      false,
+      false,
+      requestBody.conversation.team!.id,
+    );
     const convoHistory = {
       conversationId: requestBody.conversation.id,
       changeType: RuleType.TeamChanged,
-      teamId: requestBody.conversation.team!.id
+      teamId: requestBody.conversation.team!.id,
     };
     await tx.insert(conversationHistory).values(convoHistory);
   });
