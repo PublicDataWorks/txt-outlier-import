@@ -1,0 +1,24 @@
+version: 2.1
+
+jobs:
+  build:
+    machine:
+      image: ubuntu-2204:2022.04.2
+    steps:
+      - checkout
+      - run: curl -fsSL https://deno.land/install.sh | sh
+      - run: /home/circleci/.deno/bin/deno lint
+      - run: /home/circleci/.deno/bin/deno fmt --check
+  
+      - run: curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - && sudo apt-get install -y nodejs
+      - run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,inbucket,postgrest,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector, pgbouncer
+      - run:
+          name: Serve Edge function
+          command: npx supabase functions serve --no-verify-jwt --env-file=supabase/functions/user-actions/tests/.env.test
+          background: true
+      - run:
+          name: Run the tests
+          command: |
+            sleep 1
+            cd supabase/functions/user-actions
+            /home/circleci/.deno/bin/deno test --no-check --allow-all --env=tests/.env.test -q
