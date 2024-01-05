@@ -1,10 +1,10 @@
 import {
-MentionTeam,
-MentionUser,
+  MentionTeam,
+  MentionUser,
   RequestBody,
   RequestTask,
 } from "../types.ts";
-import {upsertConversation, upsertRule, upsertUsers} from "../utils.ts";
+import { upsertConversation, upsertRule, upsertUsers } from "./utils.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,
@@ -12,10 +12,11 @@ import {
 import {
   Comment,
   CommentMention,
-  Team,
   comments,
   commentsMentions,
-  tasksAssignees, teams,
+  tasksAssignees,
+  Team,
+  teams,
 } from "../drizzle/schema.ts";
 import { sql } from "npm:drizzle-orm";
 
@@ -122,13 +123,13 @@ const insertMentions = async (
         id: mention.team_id,
         name: "",
         organizationId: requestBody.conversation.organization.id,
-      })
+      });
     }
   }
   if (mentionedTeams.length > 0) {
     await tx.insert(teams).values(mentionedTeams).onConflictDoUpdate({
       target: teams.id,
-      set: { organizationId: sql`excluded.organization_id`},
+      set: { organizationId: sql`excluded.organization_id` },
     });
   }
   const uniqueMentions = mentionedData.filter((current, index, array) =>

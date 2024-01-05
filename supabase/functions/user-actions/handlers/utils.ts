@@ -5,7 +5,7 @@ import {
   RequestOrganization,
   RequestRule,
   RequestUser,
-} from "./types.ts";
+} from "../types.ts";
 import {
   Author,
   authors,
@@ -18,12 +18,12 @@ import {
   Err,
   errors,
   organizations,
-  rules, teams,
+  rules,
   User,
   UserHistory,
   userHistory,
   users,
-} from "./drizzle/schema.ts";
+} from "../drizzle/schema.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,
@@ -36,7 +36,7 @@ import {
   adaptConversationUser,
   adaptOrg,
   adaptRule,
-} from "./adapters.ts";
+} from "../adapters.ts";
 
 export const upsertRule = async (
   // deno-lint-ignore no-explicit-any

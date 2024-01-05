@@ -1,11 +1,7 @@
 import {
-  afterAll,
-  beforeEach,
   describe,
   it,
 } from "https://deno.land/std@0.210.0/testing/bdd.ts";
-import { drizzle } from "npm:drizzle-orm/postgres-js";
-import postgres from "npm:postgres";
 import { newCommentRequest } from "./fixtures/new-comment.ts";
 import {
   assert,

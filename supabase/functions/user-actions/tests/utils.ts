@@ -7,13 +7,13 @@ import {
   beforeEach,
 } from "https://deno.land/std@0.210.0/testing/bdd.ts";
 
-const client = postgres(Deno.env.get("DB_POOL_URL")!);
+const client = postgres(Deno.env.get("DB_TEST_URL")!);
 export const db = drizzle(client);
 
 beforeEach(async () => {
   await db.execute(sql.raw(DROP_ALL_TABLES));
   const sqlScript = Deno.readTextFileSync(
-    "../drizzle/0000_cuddly_big_bertha.sql",
+    "drizzle/0000_cuddly_big_bertha.sql",
   );
   await db.execute(sql.raw(sqlScript));
 });

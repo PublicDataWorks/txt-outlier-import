@@ -1,5 +1,4 @@
 import { RequestBody, RuleType } from "./types.ts";
-import { handleError } from "./utils.ts";
 import { handleNewComment } from "./handlers/comment-handler.ts";
 import { handleTeamChange } from "./handlers/team-handler.ts";
 
@@ -11,6 +10,7 @@ import {
   handleConversationClosed,
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
+import { handleError } from "./handlers/utils.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
