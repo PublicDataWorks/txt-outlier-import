@@ -17,7 +17,7 @@ import {
   adaptConversationAssigneeHistory,
 } from "../adapters.ts";
 
-export const handleConversationClosed = async (
+export const handleConversationStatusChanged = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
   changeType: string,

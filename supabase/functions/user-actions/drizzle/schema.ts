@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   serial,
   text,
@@ -339,6 +340,12 @@ export const users = pgTable("users", {
   };
 });
 
+export const invokeHistory = pgTable("invoke_history", {
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }),
+  requestBody: jsonb("request_body"),
+  conversationId: uuid("conversation_id"),
+});
+
 export type Rule = typeof rules.$inferInsert;
 export type User = typeof users.$inferInsert;
 export type UserHistory = typeof userHistory.$inferInsert;
@@ -357,3 +364,4 @@ export type ConversationAssigneeHistory =
 export type Organization = typeof organizations.$inferInsert;
 export type ConversationAuthor = typeof conversationsAuthors.$inferInsert;
 export type TwilioMessage = typeof twilioMessages.$inferInsert;
+export type InvokeHistory = typeof invokeHistory.$inferInsert;

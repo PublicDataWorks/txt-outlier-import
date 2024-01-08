@@ -17,6 +17,7 @@ import {
   ConversationUser,
   Err,
   errors,
+  invokeHistory,
   organizations,
   rules,
   User,
@@ -34,6 +35,7 @@ import {
   adaptConversation,
   adaptConversationAssignee,
   adaptConversationUser,
+  adaptHistory,
   adaptOrg,
   adaptRule,
 } from "./adapters.ts";
@@ -46,7 +48,7 @@ export const upsertRule = async (
   const newRule = adaptRule(requestRule);
   await tx.insert(rules).values(newRule).onConflictDoUpdate({
     target: rules.id,
-    set: { description: newRule.description, type: newRule.type },
+    set: { description: newRule.description },
   });
 };
 
@@ -232,3 +234,11 @@ export function replacePlaceholders(template, replacements) {
     return replacements[p1] !== undefined ? replacements[p1] : match;
   });
 }
+
+export const insertHistory = async (
+  db: PostgresJsDatabase,
+  requestBody: RequestBody,
+) => {
+  const newHistory = adaptHistory(requestBody);
+  await db.insert(invokeHistory).values(newHistory);
+};

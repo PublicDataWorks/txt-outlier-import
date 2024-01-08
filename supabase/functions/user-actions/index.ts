@@ -1,5 +1,5 @@
 import { ReplacementDictionary, RequestBody, RuleType } from "./types.ts";
-import { handleError, replacePlaceholders } from "./utils.ts";
+import { handleError, insertHistory, replacePlaceholders } from "./utils.ts";
 import { handleNewComment } from "./handlers/comment-handler.ts";
 import { handleTeamChange } from "./handlers/team-handler.ts";
 import {
@@ -13,7 +13,7 @@ import postgres from "npm:postgres";
 import { handleLabelChange } from "./handlers/label-handler.ts";
 import {
   handleConversationAssigneeChange,
-  handleConversationClosed,
+  handleConversationStatusChanged,
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 import { verify } from "./authenticate.ts";
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     replacementDictionary.failureHost = clientIps;
     replacementDictionary.failureDetails = "Missing request body";
     await sendToSlack(client, replacementDictionary);
-    return new Response("", { status: 400 });
+    return new Response("", { status: 202 });
   }
 
   const requestHeaderSig = req.headers.get("X-Hook-Signature");
@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     ).toString();
     replacementDictionary.failedRule = requestBody.rule.type;
     await sendToSlack(client, replacementDictionary);
-    return new Response("", { status: 400 });
+    return new Response("", { status: 202 });
   } else {
     const verified = await verify(requestHeaderSig, requestBody);
     if (!verified) {
@@ -66,9 +66,11 @@ Deno.serve(async (req) => {
       ).toString();
       replacementDictionary.failedRule = requestBody.rule.type;
       await sendToSlack(client, replacementDictionary);
-      return new Response("", { status: 400 });
+      return new Response("", { status: 202 });
     }
   }
+
+  await insertHistory(db, requestBody);
 
   try {
     switch (requestBody.rule.type) {
@@ -83,7 +85,11 @@ Deno.serve(async (req) => {
         break;
       case RuleType.ConversationClosed:
       case RuleType.ConversationReopened:
-        await handleConversationClosed(db, requestBody, requestBody.rule.type);
+        await handleConversationStatusChanged(
+          db,
+          requestBody,
+          requestBody.rule.type,
+        );
         break;
       case RuleType.ConversationAssigneeChange:
         await handleConversationAssigneeChange(db, requestBody);
