@@ -17,6 +17,7 @@ import {
   ConversationUser,
   Err,
   errors,
+  invokeHistory,
   organizations,
   rules,
   User,
@@ -34,6 +35,7 @@ import {
   adaptConversation,
   adaptConversationAssignee,
   adaptConversationUser,
+  adaptHistory,
   adaptOrg,
   adaptRule,
 } from "./adapters.ts";
@@ -46,7 +48,7 @@ export const upsertRule = async (
   const newRule = adaptRule(requestRule);
   await tx.insert(rules).values(newRule).onConflictDoUpdate({
     target: rules.id,
-    set: { description: newRule.description, type: newRule.type },
+    set: { description: newRule.description },
   });
 };
 
@@ -223,10 +225,20 @@ export const upsertAuthor = async (
     });
   }
   return await tx.insert(authors).values([...uniqueAuthors])
-    .onConflictDoUpdate({
-      target: authors.phoneNumber,
-      set: {
-        name: sql`excluded.name`,
-      },
-    }).returning();
+    .onConflictDoNothing().returning();
+};
+
+// Function to replace placeholders in the template
+export function replacePlaceholders(template, replacements) {
+  return template.replace(/<%=\s*(\w+)\s*%>/g, (match, p1) => {
+    return replacements[p1] !== undefined ? replacements[p1] : match;
+  });
+}
+
+export const insertHistory = async (
+  db: PostgresJsDatabase,
+  requestBody: RequestBody,
+) => {
+  const newHistory = adaptHistory(requestBody);
+  await db.insert(invokeHistory).values(newHistory);
 };
