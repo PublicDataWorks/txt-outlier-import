@@ -1,10 +1,6 @@
 import { PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
 import { conversationHistory, teams } from "../drizzle/schema.ts";
-import {
-  upsertConversation,
-  upsertOrganization,
-  upsertRule,
-} from "../utils.ts";
+import { upsertConversation, upsertOrganization, upsertRule } from "./utils.ts";
 import { RequestBody, RuleType } from "../types.ts";
 
 export const handleTeamChange = async (

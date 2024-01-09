@@ -4,7 +4,7 @@ import {
   RequestBody,
   RequestTask,
 } from "../types.ts";
-import { upsertConversation, upsertRule, upsertUsers } from "../utils.ts";
+import { upsertConversation, upsertRule, upsertUsers } from "./utils.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,

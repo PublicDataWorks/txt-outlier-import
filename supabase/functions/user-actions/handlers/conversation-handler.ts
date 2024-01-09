@@ -2,7 +2,7 @@ import {
   PostgresJsDatabase,
   PostgresJsTransaction,
 } from "npm:drizzle-orm/postgres-js";
-import { upsertConversation, upsertRule } from "../utils.ts";
+import { upsertConversation, upsertRule } from "./utils.ts";
 import { RequestBody, RequestConversation, RuleType } from "../types.ts";
 import {
   ConversationAssignee,
@@ -10,6 +10,7 @@ import {
   conversationHistory,
   conversationsAssignees,
   conversationsAssigneesHistory,
+  teams,
 } from "../drizzle/schema.ts";
 import { eq } from "npm:drizzle-orm";
 import {
@@ -24,11 +25,25 @@ export const handleConversationStatusChanged = async (
 ) => {
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule);
+    await tx.insert(teams).values({ id: requestBody.conversation.team!.id })
+      .onConflictDoNothing();
     await upsertConversation(
       tx,
       requestBody.conversation,
       changeType === RuleType.ConversationClosed,
+      false,
+      true,
+      requestBody.conversation.team!.id,
     );
+    const teamData = {
+      id: requestBody.conversation.team!.id,
+      name: requestBody.conversation.team!.name,
+      organizationId: requestBody.conversation.organization.id,
+    };
+    await tx.insert(teams).values(teamData).onConflictDoUpdate({
+      target: teams.id,
+      set: { name: teamData.name, organizationId: teamData.organizationId },
+    });
     const convoHistory = {
       conversationId: requestBody.conversation.id,
       changeType: changeType,
