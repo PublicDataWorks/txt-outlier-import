@@ -1,6 +1,6 @@
 import { RequestBody } from "../types.ts";
 import { PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
-import { upsertAuthor, upsertConversation, upsertRule } from "./utils.ts";
+import { upsertAuthor, upsertConversation, upsertRule } from "../utils.ts";
 import { PostgresJsTransaction } from "npm:drizzle-orm/postgres-js";
 import { twilioMessages } from "../drizzle/schema.ts";
 import { adaptTwilioMessage, adaptTwilioRequestAuthor } from "../adapters.ts";

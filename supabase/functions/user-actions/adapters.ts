@@ -2,12 +2,14 @@ import {
   Conversation,
   ConversationAssigneeHistory,
   ConversationUser,
+  InvokeHistory,
   Organization,
   Rule,
   TwilioMessage,
 } from "./drizzle/schema.ts";
 import {
   RequestAuthor,
+  RequestBody,
   RequestConversation,
   RequestConversationUser,
   RequestOrganization,
@@ -135,5 +137,12 @@ export const adaptTwilioMessage = (
     toField,
     accountAuthor,
     accountRecipient,
+  };
+};
+
+export const adaptHistory = (requestBody: RequestBody): InvokeHistory => {
+  return {
+    conversationId: requestBody.conversation!.id,
+    requestBody: JSON.stringify(requestBody),
   };
 };

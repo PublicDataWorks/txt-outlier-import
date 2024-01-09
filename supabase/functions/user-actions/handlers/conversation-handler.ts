@@ -2,7 +2,7 @@ import {
   PostgresJsDatabase,
   PostgresJsTransaction,
 } from "npm:drizzle-orm/postgres-js";
-import { upsertConversation, upsertRule } from "./utils.ts";
+import { upsertConversation, upsertRule } from "../utils.ts";
 import { RequestBody, RequestConversation, RuleType } from "../types.ts";
 import {
   ConversationAssignee,
@@ -10,7 +10,6 @@ import {
   conversationHistory,
   conversationsAssignees,
   conversationsAssigneesHistory,
-  teams,
 } from "../drizzle/schema.ts";
 import { eq } from "npm:drizzle-orm";
 import {
@@ -18,7 +17,7 @@ import {
   adaptConversationAssigneeHistory,
 } from "../adapters.ts";
 
-export const handleConversationClosed = async (
+export const handleConversationStatusChanged = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
   changeType: string,

@@ -48,6 +48,7 @@ export enum RuleType {
   ConversationReopened = "conversation_reopened",
   ConversationAssigneeChange = "conversation_assignee_change",
   IncomingTwilioMessage = "incoming_twilio_message",
+  OutgoingTwilioMessage = "outgoing_twilio_message",
 }
 
 export type MentionUser = {
@@ -143,3 +144,10 @@ export type TwilioRequestMessage = {
   attachments: string[];
   // TODO: author is missing
 };
+
+export interface ReplacementDictionary {
+  failureHost: string;
+  failureDetails: string;
+  failedRequestDetails: string | null;
+  failedRule: string | null;
+}
