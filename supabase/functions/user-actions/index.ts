@@ -1,5 +1,9 @@
 import { ReplacementDictionary, RequestBody, RuleType } from "./types.ts";
-import { handleError, insertHistory, replacePlaceholders } from "./utils.ts";
+import {
+  handleError,
+  insertHistory,
+  replacePlaceholders,
+} from "./handlers/utils.ts";
 import { handleNewComment } from "./handlers/comment-handler.ts";
 import { handleTeamChange } from "./handlers/team-handler.ts";
 import {
@@ -16,7 +20,6 @@ import {
   handleConversationStatusChanged,
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
-import { handleError } from "./handlers/utils.ts";
 import { verify } from "./authenticate.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
@@ -26,8 +29,13 @@ const SLACK_CHANNEL_ID = Deno.env.get("SLACK_CHANNEL")!;
 
 Deno.serve(async (req) => {
   let requestBody: RequestBody;
-  const replacementDictionary: ReplacementDictionary = {};
-  const clientIps = ips(req) || [""];
+  const replacementDictionary: ReplacementDictionary = {
+    failureHost: "",
+    failureDetails: "",
+    failedRequestDetails: null,
+    failedRule: null,
+  };
+  const clientIps = ips(req) || "";
 
   const client = SlackAPI(Deno.env.get("SLACK_API_TOKEN")!);
 
@@ -120,6 +128,7 @@ Deno.serve(async (req) => {
 
 // Function to send message to Slack
 async function sendToSlack(
+  // deno-lint-ignore no-explicit-any
   client: any,
   data: ReplacementDictionary,
 ): Promise<void> {
