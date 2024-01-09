@@ -1,10 +1,10 @@
-import {RequestBody} from "../../types.ts";
+import { RequestBody } from "../../types.ts";
 
 export const conversationCLosedRequest: RequestBody = {
   rule: {
     id: "eaea532e-ddb4-4e37-ad84-814a5f46181d",
     description: "Conversation closed",
-    type: "conversation_closed"
+    type: "conversation_closed",
   },
   conversation: {
     id: "e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
@@ -13,7 +13,7 @@ export const conversationCLosedRequest: RequestBody = {
     latest_message_subject: null,
     organization: {
       id: "7deec8a7-439a-414c-a10a-059142216786",
-      name: "Outlier Staging"
+      name: "Outlier Staging",
     },
     color: null, // FIXME
     authors: [],
@@ -96,12 +96,14 @@ export const conversationCLosedRequest: RequestBody = {
     assignee_names: "User 3",
     assignee_emails: "user3@mail.com",
     shared_label_names: "Parent Test, Nested test",
-    web_url: "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
-    app_url: "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    web_url:
+      "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    app_url:
+      "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
     team: {
       id: "fb0b601e-7d6e-4248-8882-4f129fdfe43c",
       name: "Outlier Staging",
-      organization: "7deec8a7-439a-414c-a10a-059142216786"
+      organization: "7deec8a7-439a-414c-a10a-059142216786",
     },
     shared_labels: [
       {
@@ -114,7 +116,7 @@ export const conversationCLosedRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
+        visibility: "organization",
       },
       {
         id: "37113989-97e3-4121-a903-f85af6bfaaa0",
@@ -126,17 +128,17 @@ export const conversationCLosedRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
-      }
-    ]
-  }
-}
+        visibility: "organization",
+      },
+    ],
+  },
+};
 
 export const conversationReopenedRequest: RequestBody = {
   rule: {
     id: "370517ab-47da-4521-a484-3e117289dc9e",
     description: "Conversation reopened",
-    type: "conversation_reopened"
+    type: "conversation_reopened",
   },
   conversation: {
     id: "e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
@@ -145,7 +147,7 @@ export const conversationReopenedRequest: RequestBody = {
     latest_message_subject: null,
     organization: {
       id: "7deec8a7-439a-414c-a10a-059142216786",
-      name: "Outlier Staging"
+      name: "Outlier Staging",
     },
     color: null, // FIXME
     authors: [],
@@ -228,12 +230,14 @@ export const conversationReopenedRequest: RequestBody = {
     assignee_names: "User 3",
     assignee_emails: "user3@mail.com",
     shared_label_names: "Parent Test, Nested test",
-    web_url: "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
-    app_url: "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    web_url:
+      "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    app_url:
+      "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
     team: {
       id: "fb0b601e-7d6e-4248-8882-4f129fdfe43c",
       name: "Outlier Staging",
-      organization: "7deec8a7-439a-414c-a10a-059142216786"
+      organization: "7deec8a7-439a-414c-a10a-059142216786",
     },
     shared_labels: [
       {
@@ -246,7 +250,7 @@ export const conversationReopenedRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
+        visibility: "organization",
       },
       {
         id: "37113989-97e3-4121-a903-f85af6bfaaa0",
@@ -258,17 +262,17 @@ export const conversationReopenedRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
-      }
-    ]
-  }
-}
+        visibility: "organization",
+      },
+    ],
+  },
+};
 
 export const conversationAssigneeChangeRequest: RequestBody = {
   rule: {
     id: "370517ab-47da-4521-a484-3e117289dc9e",
     description: "Conversation assignee change",
-    type: "conversation_assignee_change"
+    type: "conversation_assignee_change",
   },
   conversation: {
     id: "e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
@@ -277,7 +281,7 @@ export const conversationAssigneeChangeRequest: RequestBody = {
     latest_message_subject: null,
     organization: {
       id: "7deec8a7-439a-414c-a10a-059142216786",
-      name: "Outlier Staging"
+      name: "Outlier Staging",
     },
     color: null, // FIXME
     authors: [],
@@ -360,12 +364,14 @@ export const conversationAssigneeChangeRequest: RequestBody = {
     assignee_names: "User 3",
     assignee_emails: "user3@mail.com",
     shared_label_names: "Parent Test, Nested test",
-    web_url: "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
-    app_url: "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    web_url:
+      "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    app_url:
+      "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
     team: {
       id: "fb0b601e-7d6e-4248-8882-4f129fdfe43c",
       name: "Outlier Staging",
-      organization: "7deec8a7-439a-414c-a10a-059142216786"
+      organization: "7deec8a7-439a-414c-a10a-059142216786",
     },
     shared_labels: [
       {
@@ -378,7 +384,7 @@ export const conversationAssigneeChangeRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
+        visibility: "organization",
       },
       {
         id: "37113989-97e3-4121-a903-f85af6bfaaa0",
@@ -390,8 +396,8 @@ export const conversationAssigneeChangeRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
-      }
-    ]
-  }
-}
+        visibility: "organization",
+      },
+    ],
+  },
+};

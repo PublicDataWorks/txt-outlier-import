@@ -1,7 +1,4 @@
-import {
-  describe,
-  it,
-} from "https://deno.land/std@0.210.0/testing/bdd.ts";
+import { describe, it } from "https://deno.land/std@0.210.0/testing/bdd.ts";
 import { newCommentRequest } from "./fixtures/new-comment.ts";
 import {
   assert,

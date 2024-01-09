@@ -1,10 +1,10 @@
-import {RequestBody} from "../../types.ts";
+import { RequestBody } from "../../types.ts";
 
 export const teamChangeRequest: RequestBody = {
   rule: {
     id: "1cc84fa1-cd52-4112-8548-0fb6c1c18f7d",
     description: "Team change",
-    type: "team_change"
+    type: "team_change",
   },
   conversation: {
     id: "e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
@@ -13,7 +13,7 @@ export const teamChangeRequest: RequestBody = {
     latest_message_subject: null,
     organization: {
       id: "7deec8a7-439a-414c-a10a-059142216786",
-      name: "Outlier Staging"
+      name: "Outlier Staging",
     },
     color: null, // FIXME
     authors: [],
@@ -96,12 +96,14 @@ export const teamChangeRequest: RequestBody = {
     assignee_names: "User 3",
     assignee_emails: "user3@mail.com",
     shared_label_names: "Parent Test, Nested test",
-    web_url: "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
-    app_url: "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    web_url:
+      "https://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
+    app_url:
+      "missive://mail.missiveapp.com/#inbox/conversations/e8196c2f-4bc9-4fa1-a018-6a4078362ed1",
     team: {
       id: "fb0b601e-7d6e-4248-8882-4f129fdfe43c",
       name: "Outlier Staging",
-      organization: "7deec8a7-439a-414c-a10a-059142216786"
+      organization: "7deec8a7-439a-414c-a10a-059142216786",
     },
     shared_labels: [
       {
@@ -114,7 +116,7 @@ export const teamChangeRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
+        visibility: "organization",
       },
       {
         id: "37113989-97e3-4121-a903-f85af6bfaaa0",
@@ -126,8 +128,8 @@ export const teamChangeRequest: RequestBody = {
         share_with_organization: false,
         share_with_users: [],
         share_with_team: null,
-        visibility: "organization"
-      }
-    ]
-  }
-}
+        visibility: "organization",
+      },
+    ],
+  },
+};
