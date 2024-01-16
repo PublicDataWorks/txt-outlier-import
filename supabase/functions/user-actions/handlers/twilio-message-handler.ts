@@ -25,8 +25,6 @@ const insertTwilioMessage = async (
   const twilioAuthors = new Set([
     adaptTwilioRequestAuthor(requestMessage.from_field),
     adaptTwilioRequestAuthor(requestMessage.to_fields[0]), // TODO: Handle multiple recipients
-    adaptTwilioRequestAuthor(requestMessage.account_author),
-    adaptTwilioRequestAuthor(requestMessage.account_recipients[0]), // TODO: Handle multiple recipients
   ]);
   const filteredTwilioAuthors = [...twilioAuthors].filter((twilioAuthor) =>
     !requestBody.conversation.authors.some((author) =>
@@ -34,12 +32,20 @@ const insertTwilioMessage = async (
     )
   );
   await upsertAuthor(tx, filteredTwilioAuthors);
+  // Sample data:
+  // from_field: {
+  //       id: "AC0d82ffb9b12d5acf383ca62f1d78c54a",
+  //       name: "+1 (833) 685-6203",
+  //       username: "+18336856203"
+  //     },
   const twilioMessage = adaptTwilioMessage(
     requestMessage,
-    requestMessage.from_field.id,
-    requestMessage.from_field.id,
-    requestMessage.from_field.id,
-    requestMessage.from_field.id,
+    requestMessage.from_field.username
+      ? requestMessage.from_field.username
+      : requestMessage.from_field.id,
+    requestMessage.to_fields[0].username
+      ? requestMessage.to_fields[0].username
+      : requestMessage.to_fields[0].id,
   );
   await tx.insert(twilioMessages).values(twilioMessage);
 };
