@@ -21,6 +21,7 @@ import {
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 import { verify } from "./authenticate.ts";
+import { SlackAPIClient } from "https://deno.land/x/deno_slack_api@2.1.1/types.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
@@ -126,17 +127,14 @@ Deno.serve(async (req) => {
   }
 });
 
-// Function to send message to Slack
 async function sendToSlack(
-  // deno-lint-ignore no-explicit-any
-  client: any,
+  client: SlackAPIClient,
   data: ReplacementDictionary,
-): Promise<void> {
+) {
   const head = replacePlaceholders(markdownTemplateHeader, data);
   const body = replacePlaceholders(markdownTemplateBody, data);
 
   try {
-    // Call the chat.postMessage method using the WebClient
     const result = await client.chat.postMessage({
       channel: SLACK_CHANNEL_ID,
       text: head,

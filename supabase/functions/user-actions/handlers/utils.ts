@@ -1,4 +1,5 @@
 import {
+  ReplacementDictionary,
   RequestAuthor,
   RequestBody,
   RequestConversation,
@@ -229,7 +230,10 @@ export const upsertAuthor = async (
 };
 
 // Function to replace placeholders in the template
-export function replacePlaceholders(template, replacements) {
+export function replacePlaceholders(
+  template: string,
+  replacements: ReplacementDictionary,
+) {
   return template.replace(/<%=\s*(\w+)\s*%>/g, (match, p1) => {
     return replacements[p1] !== undefined ? replacements[p1] : match;
   });

@@ -13,7 +13,7 @@ export const db = drizzle(client);
 beforeEach(async () => {
   await db.execute(sql.raw(DROP_ALL_TABLES));
   const sqlScript = Deno.readTextFileSync(
-    "drizzle/0000_cuddly_big_bertha.sql",
+    "drizzle/0000_ancient_warlock.sql",
   );
   await db.execute(sql.raw(sqlScript));
 });
@@ -51,6 +51,7 @@ export const req = async (body: string) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=UTF-8",
+        "X-Hook-Signature": "123456",
       },
       body,
     },
