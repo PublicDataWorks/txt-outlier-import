@@ -1,5 +1,9 @@
 import { ReplacementDictionary, RequestBody, RuleType } from "./types.ts";
-import { handleError, insertHistory, replacePlaceholders } from "./utils.ts";
+import {
+  handleError,
+  insertHistory,
+  replacePlaceholders,
+} from "./handlers/utils.ts";
 import { handleNewComment } from "./handlers/comment-handler.ts";
 import { handleTeamChange } from "./handlers/team-handler.ts";
 import {
@@ -17,6 +21,7 @@ import {
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 import { verify } from "./authenticate.ts";
+import { SlackAPIClient } from "https://deno.land/x/deno_slack_api@2.1.1/types.ts";
 
 const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false });
 const db: PostgresJsDatabase = drizzle(client);
@@ -25,8 +30,13 @@ const SLACK_CHANNEL_ID = Deno.env.get("SLACK_CHANNEL")!;
 
 Deno.serve(async (req) => {
   let requestBody: RequestBody;
-  const replacementDictionary: ReplacementDictionary = {};
-  const clientIps = ips(req) || [""];
+  const replacementDictionary: ReplacementDictionary = {
+    failureHost: "",
+    failureDetails: "",
+    failedRequestDetails: null,
+    failedRule: null,
+  };
+  const clientIps = ips(req) || "";
 
   const client = SlackAPI(Deno.env.get("SLACK_API_TOKEN")!);
 
@@ -117,16 +127,14 @@ Deno.serve(async (req) => {
   }
 });
 
-// Function to send message to Slack
 async function sendToSlack(
-  client: any,
+  client: SlackAPIClient,
   data: ReplacementDictionary,
-): Promise<void> {
+) {
   const head = replacePlaceholders(markdownTemplateHeader, data);
   const body = replacePlaceholders(markdownTemplateBody, data);
 
   try {
-    // Call the chat.postMessage method using the WebClient
     const result = await client.chat.postMessage({
       channel: SLACK_CHANNEL_ID,
       text: head,

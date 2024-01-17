@@ -1,11 +1,12 @@
 import {
+  ReplacementDictionary,
   RequestAuthor,
   RequestBody,
   RequestConversation,
   RequestOrganization,
   RequestRule,
   RequestUser,
-} from "./types.ts";
+} from "../types.ts";
 import {
   Author,
   authors,
@@ -24,7 +25,7 @@ import {
   UserHistory,
   userHistory,
   users,
-} from "./drizzle/schema.ts";
+} from "../drizzle/schema.ts";
 import {
   PostgresJsDatabase,
   PostgresJsTransaction,
@@ -38,7 +39,7 @@ import {
   adaptHistory,
   adaptOrg,
   adaptRule,
-} from "./adapters.ts";
+} from "../adapters.ts";
 
 export const upsertRule = async (
   // deno-lint-ignore no-explicit-any
@@ -229,7 +230,10 @@ export const upsertAuthor = async (
 };
 
 // Function to replace placeholders in the template
-export function replacePlaceholders(template, replacements) {
+export function replacePlaceholders(
+  template: string,
+  replacements: ReplacementDictionary,
+) {
   return template.replace(/<%=\s*(\w+)\s*%>/g, (match, p1) => {
     return replacements[p1] !== undefined ? replacements[p1] : match;
   });

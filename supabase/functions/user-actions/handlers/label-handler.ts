@@ -5,7 +5,7 @@ import {
   Label,
   labels,
 } from "../drizzle/schema.ts";
-import { upsertConversation, upsertRule } from "../utils.ts";
+import { upsertConversation, upsertRule } from "./utils.ts";
 import { RequestBody } from "../types.ts";
 import { eq, sql } from "npm:drizzle-orm";
 
