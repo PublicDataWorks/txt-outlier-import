@@ -13,7 +13,7 @@ import {
 import { SlackAPI } from "https://deno.land/x/deno_slack_api@2.1.1/mod.ts";
 
 import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
-import postgres from 'https://deno.land/x/postgresjs/mod.js'
+import postgres from "https://deno.land/x/postgresjs/mod.js";
 import { handleLabelChange } from "./handlers/label-handler.ts";
 import {
   handleConversationAssigneeChange,
@@ -23,7 +23,10 @@ import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 import { verify } from "./authenticate.ts";
 import { SlackAPIClient } from "https://deno.land/x/deno_slack_api@2.1.1/types.ts";
 
-const client = postgres(Deno.env.get("DB_POOL_URL")!, { prepare: false, ssl: {rejectUnauthorized: true} });
+const client = postgres(Deno.env.get("DB_POOL_URL")!, {
+  prepare: false,
+  ssl: { rejectUnauthorized: true },
+});
 const db: PostgresJsDatabase = drizzle(client);
 
 const SLACK_CHANNEL_ID = Deno.env.get("SLACK_CHANNEL")!;
