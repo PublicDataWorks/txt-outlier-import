@@ -1,117 +1,77 @@
-import { ReplacementDictionary, RequestBody, RuleType } from "./types.ts";
-import {
-  handleError,
-  insertHistory,
-  replacePlaceholders,
-} from "./handlers/utils.ts";
+import { RequestBody, RuleType } from "./types.ts";
+import { handleError, insertHistory } from "./handlers/utils.ts";
 import { handleNewComment } from "./handlers/comment-handler.ts";
 import { handleTeamChange } from "./handlers/team-handler.ts";
-import {
-  markdownTemplateBody,
-  markdownTemplateHeader,
-} from "./templates/slack.ts";
-import { SlackAPI } from "https://deno.land/x/deno_slack_api@2.1.1/mod.ts";
-
-import { drizzle, PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
-import postgres from "https://deno.land/x/postgresjs/mod.js";
 import { handleLabelChange } from "./handlers/label-handler.ts";
 import {
   handleConversationAssigneeChange,
   handleConversationStatusChanged,
 } from "./handlers/conversation-handler.ts";
 import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
-import { verify } from "./authenticate.ts";
-import { SlackAPIClient } from "https://deno.land/x/deno_slack_api@2.1.1/types.ts";
-
-const client = postgres(Deno.env.get("DB_POOL_URL")!, {
-  prepare: false,
-  ssl: { rejectUnauthorized: true },
-});
-const db: PostgresJsDatabase = drizzle(client);
-
-const SLACK_CHANNEL_ID = Deno.env.get("SLACK_CHANNEL")!;
+import { verify } from "./authentication.ts";
+import supabase from "./database.ts";
+import { authenticationFailed } from "./authentication.ts";
 
 Deno.serve(async (req) => {
   let requestBody: RequestBody;
-  const replacementDictionary: ReplacementDictionary = {
-    failureHost: "",
-    failureDetails: "",
-    failedRequestDetails: null,
-    failedRule: null,
-  };
-  const clientIps = ips(req) || "";
-
-  const client = SlackAPI(Deno.env.get("SLACK_API_TOKEN")!);
-
   try {
     requestBody = await req.json();
     console.log(requestBody);
   } catch (err) {
     console.error(`Bad Request: Invalid JSON: ${err}`);
-    replacementDictionary.failureHost = clientIps;
-    replacementDictionary.failureDetails = "Missing request body";
-    await sendToSlack(client, replacementDictionary);
+    await authenticationFailed(req, "Missing request body");
     return new Response("", { status: 202 });
   }
 
   const requestHeaderSig = req.headers.get("X-Hook-Signature");
   if (!requestHeaderSig) {
     console.error("Bad Request: X-Hook-Signature header is missing");
-    replacementDictionary.failureHost = clientIps;
-    replacementDictionary.failureDetails = "Missing authentication header";
-    replacementDictionary.failedRequestDetails = JSON.stringify(
+    await authenticationFailed(
+      req,
+      "Missing authentication header",
       requestBody,
-      null,
-      2,
-    ).toString();
-    replacementDictionary.failedRule = requestBody.rule.type;
-    await sendToSlack(client, replacementDictionary);
+    );
     return new Response("", { status: 202 });
   } else {
     const verified = await verify(requestHeaderSig, requestBody);
     if (!verified) {
-      replacementDictionary.failureHost = clientIps;
-      replacementDictionary.failureDetails = "Mismatched authentication header";
-      replacementDictionary.failedRequestDetails = JSON.stringify(
+      await authenticationFailed(
+        req,
+        "Missing authentication header",
         requestBody,
-        null,
-        2,
-      ).toString();
-      replacementDictionary.failedRule = requestBody.rule.type;
-      await sendToSlack(client, replacementDictionary);
+      );
       return new Response("", { status: 202 });
     }
   }
 
-  await insertHistory(db, requestBody);
-
+  await insertHistory(supabase, requestBody);
   try {
     switch (requestBody.rule.type) {
       case RuleType.NewComment:
-        await handleNewComment(db, requestBody);
+        await handleNewComment(supabase, requestBody);
         break;
       case RuleType.TeamChanged:
-        await handleTeamChange(db, requestBody);
+        await handleTeamChange(supabase, requestBody);
         break;
       case RuleType.LabelChanged:
-        await handleLabelChange(db, requestBody);
+        await handleLabelChange(supabase, requestBody);
         break;
       case RuleType.ConversationClosed:
       case RuleType.ConversationReopened:
         await handleConversationStatusChanged(
-          db,
+          supabase,
           requestBody,
           requestBody.rule.type,
         );
         break;
       case RuleType.ConversationAssigneeChange:
-        await handleConversationAssigneeChange(db, requestBody);
+        await handleConversationAssigneeChange(supabase, requestBody);
         break;
       case RuleType.IncomingTwilioMessage:
-        await handleTwilioMessage(db, requestBody);
+        await handleTwilioMessage(supabase, requestBody);
         break;
       case RuleType.OutgoingTwilioMessage:
-        await handleTwilioMessage(db, requestBody);
+        await handleTwilioMessage(supabase, requestBody);
         break;
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`);
@@ -125,37 +85,7 @@ Deno.serve(async (req) => {
     Request body: ${JSON.stringify(requestBody)}
     Stack trace: ${err.stack}`,
     );
-    await handleError(db, requestBody, err);
+    await handleError(supabase, requestBody, err);
     return new Response("", { status: 400 });
   }
 });
-
-async function sendToSlack(
-  client: SlackAPIClient,
-  data: ReplacementDictionary,
-) {
-  const head = replacePlaceholders(markdownTemplateHeader, data);
-  const body = replacePlaceholders(markdownTemplateBody, data);
-
-  try {
-    const result = await client.chat.postMessage({
-      channel: SLACK_CHANNEL_ID,
-      text: head,
-    });
-    if (result.ok) {
-      await client.chat.postMessage({
-        channel: SLACK_CHANNEL_ID,
-        text: body,
-        thread_ts: result.ts,
-      });
-    } else {
-      throw new Error(`Failed to send message: ${result}`);
-    }
-  } catch (error) {
-    console.error("Error sending message to Slack:", error.message);
-  }
-}
-
-function ips(req: Request) {
-  return req.headers.get("x-forwarded-for")?.split(/\s*,\s*/).toString();
-}

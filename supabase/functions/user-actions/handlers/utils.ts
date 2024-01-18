@@ -1,5 +1,4 @@
 import {
-  ReplacementDictionary,
   RequestAuthor,
   RequestBody,
   RequestConversation,
@@ -228,16 +227,6 @@ export const upsertAuthor = async (
   return await tx.insert(authors).values([...uniqueAuthors])
     .onConflictDoNothing().returning();
 };
-
-// Function to replace placeholders in the template
-export function replacePlaceholders(
-  template: string,
-  replacements: ReplacementDictionary,
-) {
-  return template.replace(/<%=\s*(\w+)\s*%>/g, (match, p1) => {
-    return replacements[p1] !== undefined ? replacements[p1] : match;
-  });
-}
 
 export const insertHistory = async (
   db: PostgresJsDatabase,
