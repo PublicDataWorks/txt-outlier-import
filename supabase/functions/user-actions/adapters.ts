@@ -122,8 +122,6 @@ export const adaptTwilioMessage = (
   requestMessage: TwilioRequestMessage,
   fromField: string,
   toField: string,
-  accountAuthor: string,
-  accountRecipient: string,
 ): TwilioMessage => {
   return {
     id: requestMessage.id,
@@ -135,8 +133,6 @@ export const adaptTwilioMessage = (
     references: requestMessage.references,
     fromField,
     toField,
-    accountAuthor,
-    accountRecipient,
   };
 };
 

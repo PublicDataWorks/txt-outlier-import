@@ -166,14 +166,8 @@ export const twilioMessages = pgTable("twilio_messages", {
     .notNull(),
   externalId: text("external_id"),
   attachments: text("attachments"),
-  fromField: text("fromField").notNull().references(() => authors.phoneNumber),
-  toField: text("toField").notNull().references(() => authors.phoneNumber),
-  accountAuthor: text("accountAuthor").notNull().references(() =>
-    authors.phoneNumber
-  ),
-  accountRecipient: text("accountRecipient").notNull().references(() =>
-    authors.phoneNumber
-  ),
+  fromField: text("from_field").notNull().references(() => authors.phoneNumber),
+  toField: text("to_field").notNull().references(() => authors.phoneNumber),
 });
 
 export const userHistory = pgTable("user_history", {
