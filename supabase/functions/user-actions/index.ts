@@ -11,6 +11,7 @@ import { handleTwilioMessage } from "./handlers/twilio-message-handler.ts";
 import { verify } from "./authentication.ts";
 import supabase from "./database.ts";
 import { authenticationFailed } from "./authentication.ts";
+import { deletePendingSecondBroadcastMessage } from "./handlers/broadcast-reply-handlers.ts";
 
 Deno.serve(async (req) => {
   let requestBody: RequestBody;
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
         break;
       case RuleType.IncomingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody);
+        await deletePendingSecondBroadcastMessage(supabase, requestBody);
         break;
       case RuleType.OutgoingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody);

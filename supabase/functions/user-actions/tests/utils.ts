@@ -13,7 +13,7 @@ export const db = drizzle(client);
 beforeEach(async () => {
   await db.execute(sql.raw(DROP_ALL_TABLES));
   const sqlScript = Deno.readTextFileSync(
-    "drizzle/0000_ancient_warlock.sql",
+    "0000_smooth_mathemanic.sql",
   );
   await db.execute(sql.raw(sqlScript));
 });
