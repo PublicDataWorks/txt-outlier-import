@@ -1,23 +1,19 @@
-import { PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
-import {
-  ConversationLabel,
-  conversationsLabels,
-  Label,
-  labels,
-} from "../drizzle/schema.ts";
-import { upsertConversation, upsertRule } from "./utils.ts";
-import { RequestBody } from "../types.ts";
-import { eq, sql } from "npm:drizzle-orm";
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { eq, sql } from 'drizzle-orm'
+
+import { ConversationLabel, conversationsLabels, Label, labels } from '../drizzle/schema.ts'
+import { upsertConversation, upsertRule } from './utils.ts'
+import { RequestBody } from '../types.ts'
 
 export const handleLabelChange = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
 ) => {
   await db.transaction(async (tx) => {
-    await upsertRule(tx, requestBody.rule);
-    await upsertConversation(tx, requestBody.conversation);
-    const requestLabels = new Set<Label>();
-    const requestConversationsLabels = new Set<ConversationLabel>();
+    await upsertRule(tx, requestBody.rule)
+    await upsertConversation(tx, requestBody.conversation)
+    const requestLabels = new Set<Label>()
+    const requestConversationsLabels = new Set<ConversationLabel>()
     for (const label of requestBody.conversation.shared_labels) {
       requestLabels.add({
         id: label.id,
@@ -27,11 +23,11 @@ export const handleLabelChange = async (
         parent: label.parent,
         shareWithOrganization: label.share_with_organization,
         visibility: label.visibility,
-      });
+      })
       requestConversationsLabels.add({
         conversationId: requestBody.conversation.id,
         labelId: label.id,
-      });
+      })
     }
 
     if (requestLabels.size > 0) {
@@ -45,15 +41,15 @@ export const handleLabelChange = async (
           shareWithOrganization: sql`excluded.share_with_organization`,
           visibility: sql`excluded.visibility`,
         },
-      });
+      })
     }
     if (requestConversationsLabels.size > 0) {
       await tx.delete(conversationsLabels).where(
         eq(conversationsLabels.conversationId, requestBody.conversation.id!),
-      );
+      )
       await tx.insert(conversationsLabels).values([
         ...requestConversationsLabels,
-      ]);
+      ])
     }
-  });
-};
+  })
+}

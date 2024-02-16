@@ -1,18 +1,19 @@
-import { RequestBody } from "../types.ts";
-import { PostgresJsDatabase } from "npm:drizzle-orm/postgres-js";
-import { outgoingMessages } from "../drizzle/schema.ts";
-import { and, eq, gte, lt } from "npm:drizzle-orm";
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { and, eq } from 'drizzle-orm'
+
+import { RequestBody } from '../types.ts'
+import { outgoingMessages } from '../drizzle/schema.ts'
 
 export const deletePendingSecondBroadcastMessage = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
 ) => {
-  const requestMessage = requestBody.message!;
-  const deliveredAtUnixTimestamp = requestMessage.delivered_at * 1000;
-  const deliveredDate = new Date(deliveredAtUnixTimestamp);
-  deliveredDate.setHours(0, 0, 0, 0);
-  const nextDay = new Date(deliveredDate);
-  nextDay.setDate(deliveredDate.getDate() + 1);
+  const requestMessage = requestBody.message!
+  const deliveredAtUnixTimestamp = requestMessage.delivered_at * 1000
+  const deliveredDate = new Date(deliveredAtUnixTimestamp)
+  deliveredDate.setHours(0, 0, 0, 0)
+  const nextDay = new Date(deliveredDate)
+  nextDay.setDate(deliveredDate.getDate() + 1)
   const deletedMessages = await db.delete(outgoingMessages)
     .where(
       and(
@@ -25,10 +26,10 @@ export const deletePendingSecondBroadcastMessage = async (
         ),
       ),
     )
-    .returning();
+    .returning()
 
   console.log(
-    "Deleted pending second message rows from OutgoingMessages ",
+    'Deleted pending second message rows from OutgoingMessages ',
     deletedMessages,
-  ); // Log any affected rows
-};
+  ) // Log any affected rows
+}
