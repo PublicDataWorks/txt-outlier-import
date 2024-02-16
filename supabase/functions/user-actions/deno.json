@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": [
+      "deno.window"
+    ],
+    "strict": true
+  },
+  "lint": {
+    "exclude": [
+      "drizzle/node_modules",
+      "node_modules"
+    ],
+    "rules": {
+      "tags": [
+        "recommended"
+      ]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "semiColons": false,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "exclude": [
+      "drizzle/node_modules",
+      "node_modules"
+    ]
+  },
+  "test": {
+    "include": [
+      "src/"
+    ],
+    "exclude": [
+      "src/testdata/",
+      "data/fixtures/**/*.ts"
+    ]
+  },
+  "tasks": {
+    "fmt": "deno fmt **/*.ts",
+    "lint": "deno lint **/*.ts",
+    "test": "deno test --no-check --allow-all --env tests/.env.test -q tests/"
+  }
+}

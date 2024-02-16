@@ -1,26 +1,23 @@
-import { assert } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { sql } from "npm:drizzle-orm";
-import { drizzle } from "npm:drizzle-orm/postgres-js";
-import postgres from "npm:postgres";
-import {
-  afterAll,
-  beforeEach,
-} from "https://deno.land/std@0.210.0/testing/bdd.ts";
+import { assert } from 'https://deno.land/std@0.210.0/assert/mod.ts'
+import { sql } from 'npm:drizzle-orm'
+import { drizzle } from 'npm:drizzle-orm/postgres-js'
+import postgres from 'npm:postgres'
+import { afterAll, beforeEach } from 'https://deno.land/std@0.210.0/testing/bdd.ts'
 
-const client = postgres(Deno.env.get("DB_TEST_URL")!);
-export const db = drizzle(client);
+const client = postgres('postgresql://postgres:postgres@127.0.0.1:54322/postgres')
+export const db = drizzle(client)
 
 beforeEach(async () => {
-  await db.execute(sql.raw(DROP_ALL_TABLES));
+  await db.execute(sql.raw(DROP_ALL_TABLES))
   const sqlScript = Deno.readTextFileSync(
-    "drizzle/0000_ancient_warlock.sql",
-  );
-  await db.execute(sql.raw(sqlScript));
-});
+    'drizzle/0000_smooth_mathemanic.sql',
+  )
+  await db.execute(sql.raw(sqlScript))
+})
 
 afterAll(async () => {
-  await client.end();
-});
+  await client.end()
+})
 
 export const DROP_ALL_TABLES = `
     DROP TABLE IF EXISTS "errors" CASCADE;
@@ -42,20 +39,20 @@ export const DROP_ALL_TABLES = `
     DROP TABLE IF EXISTS "tasks_assignees" CASCADE;
     DROP TABLE IF EXISTS "twilio_messages" CASCADE;
     DROP TABLE IF EXISTS "user_history" CASCADE;
-`;
+`
 
 export const req = async (body: string) => {
   const response = await fetch(
-    "http://127.0.0.1:54321/functions/v1/user-actions",
+    'http://127.0.0.1:54321/functions/v1/user-actions',
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json; charset=UTF-8",
-        "X-Hook-Signature": "123456",
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Hook-Signature': '123456',
       },
       body,
     },
-  );
-  await response.text();
-  assert(response.ok);
-};
+  )
+  await response.text()
+  assert(response.ok)
+}

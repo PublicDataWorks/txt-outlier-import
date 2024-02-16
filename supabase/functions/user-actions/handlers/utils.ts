@@ -1,3 +1,6 @@
+import { eq, inArray, sql } from 'drizzle-orm'
+import { PostgresJsDatabase, PostgresJsTransaction } from 'drizzle-orm/postgres-js'
+
 import {
   RequestAuthor,
   RequestBody,
@@ -5,7 +8,7 @@ import {
   RequestOrganization,
   RequestRule,
   RequestUser,
-} from "../types.ts";
+} from '../types.ts'
 import {
   Author,
   authors,
@@ -24,13 +27,7 @@ import {
   UserHistory,
   userHistory,
   users,
-} from "../drizzle/schema.ts";
-import {
-  PostgresJsDatabase,
-  PostgresJsTransaction,
-} from "npm:drizzle-orm/postgres-js";
-import { inArray, sql } from "npm:drizzle-orm";
-import { eq } from "npm:drizzle-orm";
+} from '../drizzle/schema.ts'
 import {
   adaptConversation,
   adaptConversationAssignee,
@@ -38,19 +35,19 @@ import {
   adaptHistory,
   adaptOrg,
   adaptRule,
-} from "../adapters.ts";
+} from '../adapters.ts'
 
 export const upsertRule = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestRule: RequestRule,
 ) => {
-  const newRule = adaptRule(requestRule);
+  const newRule = adaptRule(requestRule)
   await tx.insert(rules).values(newRule).onConflictDoUpdate({
     target: rules.id,
     set: { description: newRule.description },
-  });
-};
+  })
+}
 
 export const handleError = async (
   db: PostgresJsDatabase,
@@ -63,27 +60,27 @@ export const handleError = async (
     ruleType: requestBody.rule.type,
     message: appError.message,
     requestBody: JSON.stringify(requestBody),
-  };
-  await db.insert(errors).values(err);
-};
+  }
+  await db.insert(errors).values(err)
+}
 
 export const upsertUsers = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestUsers: RequestUser[],
 ) => {
-  if (requestUsers.length === 0) return;
+  if (requestUsers.length === 0) return
 
   const newUsers: User[] = requestUsers.map((
     { id, email, name, avatar_url },
-  ) => ({ id, email, name, avatarUrl: avatar_url }));
-  const ids: string[] = newUsers.map(({ id }) => id!);
+  ) => ({ id, email, name, avatarUrl: avatar_url }))
+  const ids: string[] = newUsers.map(({ id }) => id!)
   const existingUsers = await tx.select().from(users).where(
     inArray(users.id, ids),
-  );
-  const changelogs: UserHistory[] = [];
+  )
+  const changelogs: UserHistory[] = []
   for (const user of newUsers) {
-    const existingUser = existingUsers.find((u) => u.id === user.id);
+    const existingUser = existingUsers.find((u) => u.id === user.id)
     if (
       !existingUser || existingUser.email !== user.email ||
       existingUser.name !== user.name
@@ -92,7 +89,7 @@ export const upsertUsers = async (
         name: user.name,
         email: user.email,
         userId: user.id!,
-      });
+      })
     }
   }
   await tx.insert(users).values(newUsers).onConflictDoUpdate({
@@ -101,11 +98,11 @@ export const upsertUsers = async (
       name: sql`excluded.name`,
       email: sql`excluded.email`,
     },
-  });
+  })
   if (changelogs.length > 0) {
-    await tx.insert(userHistory).values(changelogs);
+    await tx.insert(userHistory).values(changelogs)
   }
-};
+}
 
 export const upsertConversation = async (
   // deno-lint-ignore no-explicit-any
@@ -118,80 +115,80 @@ export const upsertConversation = async (
 ) => {
   // TODO: missing color field
   if (upsertOrg) {
-    await upsertOrganization(tx, requestConvo.organization);
+    await upsertOrganization(tx, requestConvo.organization)
   }
-  const inserted: Author[] = await upsertAuthor(tx, requestConvo.authors);
+  const inserted: Author[] = await upsertAuthor(tx, requestConvo.authors)
   // TODO: handle external authors
-  const convo = adaptConversation(requestConvo);
+  const convo = adaptConversation(requestConvo)
   if (closed !== null) {
-    convo.closed = closed;
+    convo.closed = closed
   }
   if (teamId) {
-    convo.teamId = teamId;
+    convo.teamId = teamId
   }
-  const assignees = [];
+  const assignees = []
   if (!assigneeChanged) {
     // This is an unsync convo, no assignee change emitted
     const existingConvo = await tx.select().from(conversations).where(
       eq(conversations.id, convo.id!),
-    );
+    )
     if (existingConvo.length === 0 && requestConvo.assignees.length > 0) {
       for (const assignee of requestConvo.assignees) {
-        assignees.push(adaptConversationAssignee(assignee, requestConvo.id));
+        assignees.push(adaptConversationAssignee(assignee, requestConvo.id))
       }
     }
   }
   await tx.insert(conversations).values(convo).onConflictDoUpdate({
     target: conversations.id,
     set: { ...convo },
-  });
+  })
   if (inserted.length > 0) {
-    const convoAuthors: ConversationAuthor[] = [];
+    const convoAuthors: ConversationAuthor[] = []
     for (const author of inserted) {
       convoAuthors.push({
         conversationId: convo.id!,
         authorPhoneNumber: author.phoneNumber,
-      });
+      })
     }
     await tx.insert(conversationsAuthors).values(convoAuthors)
-      .onConflictDoNothing();
+      .onConflictDoNothing()
   }
-  await upsertConversationsUsers(tx, requestConvo);
+  await upsertConversationsUsers(tx, requestConvo)
   if (!assigneeChanged && assignees.length > 0) {
-    await tx.insert(conversationsAssignees).values(assignees);
+    await tx.insert(conversationsAssignees).values(assignees)
   }
-};
+}
 
 export const upsertOrganization = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestOrganization: RequestOrganization,
 ) => {
-  const org = adaptOrg(requestOrganization);
+  const org = adaptOrg(requestOrganization)
   await tx.insert(organizations).values(org).onConflictDoUpdate({
     target: organizations.id,
     set: { name: org.name },
-  });
-};
+  })
+}
 
 const upsertConversationsUsers = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   requestConvo: RequestConversation,
 ) => {
-  if (requestConvo.users.length === 0) return;
-  const users: RequestUser[] = [];
-  const convoUser: ConversationUser[] = [];
+  if (requestConvo.users.length === 0) return
+  const users: RequestUser[] = []
+  const convoUser: ConversationUser[] = []
   for (const user of requestConvo.users) {
     users.push({
       id: user.id,
       name: user.name,
       email: user.email,
-      avatar_url: "",
-    });
-    convoUser.push(adaptConversationUser(user, requestConvo.id));
+      avatar_url: '',
+    })
+    convoUser.push(adaptConversationUser(user, requestConvo.id))
   }
-  await upsertUsers(tx, users);
+  await upsertUsers(tx, users)
   await tx.insert(conversationsUsers).values(convoUser).onConflictDoUpdate({
     target: [conversationsUsers.conversationId, conversationsUsers.userId],
     set: {
@@ -204,34 +201,34 @@ const upsertConversationsUsers = async (
       flagged: sql`excluded.flagged`,
       snoozed: sql`excluded.snoozed`,
     },
-  });
-};
+  })
+}
 
 export const upsertAuthor = async (
   // deno-lint-ignore no-explicit-any
   tx: PostgresJsTransaction<any, any>,
   request_authors: RequestAuthor[],
 ): Promise<Author[]> => {
-  if (request_authors.length === 0) return [];
-  const uniqueAuthors = new Set<Author>();
+  if (request_authors.length === 0) return []
+  const uniqueAuthors = new Set<Author>()
   for (const author of request_authors) {
     // TODO: Some authors have only name, no phone number
     if (!author.phone_number) {
-      continue;
+      continue
     }
     uniqueAuthors.add({
       name: author.name,
       phoneNumber: author.phone_number,
-    });
+    })
   }
   return await tx.insert(authors).values([...uniqueAuthors])
-    .onConflictDoNothing().returning();
-};
+    .onConflictDoNothing().returning()
+}
 
 export const insertHistory = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
 ) => {
-  const newHistory = adaptHistory(requestBody);
-  await db.insert(invokeHistory).values(newHistory);
-};
+  const newHistory = adaptHistory(requestBody)
+  await db.insert(invokeHistory).values(newHistory)
+}

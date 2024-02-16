@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "postgres": "https://deno.land/x/postgresjs/mod.js",
+    "drizzle-orm/postgres-js": "npm:drizzle-orm/postgres-js",
+    "slack-API/": "https://deno.land/x/deno_slack_api@2.1.1/",
+    "encoding/": "https://deno.land/std@0.210.0/encoding/",
+    "drizzle-orm": "npm:drizzle-orm"
+  }
+}

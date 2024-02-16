@@ -6,7 +6,7 @@ import {
   Organization,
   Rule,
   TwilioMessage,
-} from "./drizzle/schema.ts";
+} from './drizzle/schema.ts'
 import {
   RequestAuthor,
   RequestBody,
@@ -16,7 +16,7 @@ import {
   RequestRule,
   TwilioRequestAuthor,
   TwilioRequestMessage,
-} from "./types.ts";
+} from './types.ts'
 
 export const adaptConversation = (
   requestConvo: RequestConversation,
@@ -38,23 +38,23 @@ export const adaptConversation = (
     webUrl: requestConvo.web_url,
     appUrl: requestConvo.app_url,
     organizationId: requestConvo.organization.id,
-  };
-};
+  }
+}
 
 export const adaptRule = (requestRule: RequestRule): Rule => {
   return {
     id: requestRule.id,
     description: requestRule.description,
     type: requestRule.type,
-  };
-};
+  }
+}
 
 export const adaptOrg = (requestOrg: RequestOrganization): Organization => {
   return {
     id: requestOrg.id,
     name: requestOrg.name,
-  };
-};
+  }
+}
 
 export const adaptConversationUser = (
   user: RequestConversationUser,
@@ -71,8 +71,8 @@ export const adaptConversationUser = (
     assigned: user.assigned,
     flagged: user.flagged,
     snoozed: user.snoozed,
-  };
-};
+  }
+}
 
 export const adaptConversationAssignee = (
   assignee: RequestConversationUser,
@@ -89,8 +89,8 @@ export const adaptConversationAssignee = (
     assigned: assignee.assigned,
     flagged: assignee.flagged,
     snoozed: assignee.snoozed,
-  };
-};
+  }
+}
 
 export const adaptConversationAssigneeHistory = (
   assignee: RequestConversationUser,
@@ -106,8 +106,8 @@ export const adaptConversationAssigneeHistory = (
     flagged: assignee.flagged,
     snoozed: assignee.snoozed,
     conversationHistoryId,
-  };
-};
+  }
+}
 
 export const adaptTwilioRequestAuthor = (
   twilioUser: TwilioRequestAuthor,
@@ -115,8 +115,8 @@ export const adaptTwilioRequestAuthor = (
   return {
     name: twilioUser.name,
     phone_number: twilioUser.id,
-  };
-};
+  }
+}
 
 export const adaptTwilioMessage = (
   requestMessage: TwilioRequestMessage,
@@ -133,12 +133,12 @@ export const adaptTwilioMessage = (
     references: requestMessage.references,
     fromField,
     toField,
-  };
-};
+  }
+}
 
 export const adaptHistory = (requestBody: RequestBody): InvokeHistory => {
   return {
     conversationId: requestBody.conversation!.id,
     requestBody: JSON.stringify(requestBody),
-  };
-};
+  }
+}

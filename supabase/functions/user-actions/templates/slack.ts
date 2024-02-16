@@ -7,10 +7,10 @@ The server received a request that failed due to the following reason:
 - Rule: *<%= failedRule %>*
 
 Here are the details of the failed request:
-`;
+`
 
 export const markdownTemplateBody = `
 \`\`\`
 <%= failedRequestDetails %>
 \`\`\`
-`;
+`
