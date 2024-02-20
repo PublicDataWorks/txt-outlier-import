@@ -1,10 +1,10 @@
-import { assert } from 'https://deno.land/std@0.210.0/assert/mod.ts'
-import { sql } from 'npm:drizzle-orm'
-import { drizzle } from 'npm:drizzle-orm/postgres-js'
-import postgres from 'npm:postgres'
-import { afterAll, beforeEach } from 'https://deno.land/std@0.210.0/testing/bdd.ts'
+import { sql } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
+import { afterAll, beforeEach } from 'testing/bdd.ts'
+import { assert } from 'testing/asserts.ts'
 
-const client = postgres('postgresql://postgres:postgres@127.0.0.1:54322/postgres')
+const client = postgres('postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres')
 export const db = drizzle(client)
 
 beforeEach(async () => {
@@ -39,6 +39,8 @@ export const DROP_ALL_TABLES = `
     DROP TABLE IF EXISTS "tasks_assignees" CASCADE;
     DROP TABLE IF EXISTS "twilio_messages" CASCADE;
     DROP TABLE IF EXISTS "user_history" CASCADE;
+    DROP TABLE IF EXISTS "broadcast_sent_message_status" CASCADE;
+    DROP TABLE IF EXISTS "outgoing_messages" CASCADE;
 `
 
 export const req = async (body: string) => {
