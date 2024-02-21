@@ -18,7 +18,7 @@ import {
   conversationCLosedRequest,
   conversationReopenedRequest,
 } from './fixtures/conversation-change-request.ts'
-import supabase from '../database.ts';
+import supabase from '../database.ts'
 
 describe(
   'Conversation',

@@ -5,7 +5,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.t
 import { comments, commentsMentions, tasksAssignees, users } from '../drizzle/schema.ts'
 import { MentionUser } from '../types.ts'
 import { req } from './utils.ts'
-import supabase from '../database.ts';
+import supabase from '../database.ts'
 
 describe(
   'New comment',

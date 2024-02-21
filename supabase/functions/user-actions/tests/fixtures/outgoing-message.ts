@@ -1,4 +1,4 @@
-import supabase from '../../database.ts';
+import supabase from '../../database.ts'
 import {
   AudienceSegment,
   audienceSegments,

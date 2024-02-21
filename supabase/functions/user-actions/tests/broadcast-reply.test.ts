@@ -6,7 +6,7 @@ import { outgoingMessages } from '../drizzle/schema.ts'
 import { req } from './utils.ts'
 import { createOutgoingMessages } from './fixtures/outgoing-message.ts'
 import { newIncomingSmsRequest } from './fixtures/incoming-twilio-message-request.ts'
-import supabase from '../database.ts';
+import supabase from '../database.ts'
 
 describe(
   'Broadcast reply',

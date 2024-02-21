@@ -4,7 +4,7 @@ import { assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.ts'
 import { req } from './utils.ts'
 import { labelChangeRequest } from './fixtures/label-change-request.ts'
 import { labels } from '../drizzle/schema.ts'
-import supabase from '../database.ts';
+import supabase from '../database.ts'
 
 describe(
   'Label change',

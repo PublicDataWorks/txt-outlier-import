@@ -4,7 +4,7 @@ import { assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.ts'
 import { req } from './utils.ts'
 import { teams } from '../drizzle/schema.ts'
 import { teamChangeRequest } from './fixtures/team-change-request.ts'
-import supabase from "../database.ts";
+import supabase from '../database.ts'
 
 describe(
   'Team',
