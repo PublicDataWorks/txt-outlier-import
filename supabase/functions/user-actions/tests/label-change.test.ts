@@ -1,20 +1,21 @@
 import { describe, it } from 'https://deno.land/std@0.210.0/testing/bdd.ts'
 import { assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.ts'
 
-import { db, req } from './utils.ts'
+import { req } from './utils.ts'
 import { labelChangeRequest } from './fixtures/label-change-request.ts'
 import { labels } from '../drizzle/schema.ts'
+import supabase from '../database.ts'
 
 describe(
   'Label change',
   { sanitizeOps: false, sanitizeResources: false },
   () => {
     it('new', async () => {
-      const existingLabel = await db.select().from(labels)
+      const existingLabel = await supabase.select().from(labels)
       assertEquals(existingLabel.length, 0)
       await req(JSON.stringify(labelChangeRequest))
 
-      const label = await db.select().from(labels)
+      const label = await supabase.select().from(labels)
       assertEquals(label.length, 1)
       const requestLabel = labelChangeRequest.conversation.shared_labels[0]
       assertEquals(label[0].name, requestLabel.name)
@@ -38,7 +39,7 @@ describe(
       newLabelChange.conversation.shared_labels[0].name = 'new name'
       await req(JSON.stringify(newLabelChange))
 
-      const label = await db.select().from(labels)
+      const label = await supabase.select().from(labels)
       assertEquals(label.length, 1)
 
       const requestLabel = labelChangeRequest.conversation.shared_labels[0]

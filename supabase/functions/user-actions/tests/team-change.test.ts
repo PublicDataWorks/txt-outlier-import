@@ -1,20 +1,21 @@
 import { describe, it } from 'https://deno.land/std@0.210.0/testing/bdd.ts'
 import { assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.ts'
 
-import { db, req } from './utils.ts'
+import { req } from './utils.ts'
 import { teams } from '../drizzle/schema.ts'
 import { teamChangeRequest } from './fixtures/team-change-request.ts'
+import supabase from '../database.ts'
 
 describe(
   'Team',
   { sanitizeOps: false, sanitizeResources: false },
   () => {
     it('change', async () => {
-      const existingTeams = await db.select().from(teams)
+      const existingTeams = await supabase.select().from(teams)
       assertEquals(existingTeams.length, 0)
       await req(JSON.stringify(teamChangeRequest))
 
-      const newTeam = await db.select().from(teams)
+      const newTeam = await supabase.select().from(teams)
       assertEquals(newTeam.length, 1)
       assertEquals(newTeam[0].id, teamChangeRequest.conversation.team!.id)
       assertEquals(newTeam[0].name, teamChangeRequest.conversation.team!.name)
@@ -30,7 +31,7 @@ describe(
       body.conversation.team.name = 'new name'
       await req(JSON.stringify(body))
 
-      const newTeam = await db.select().from(teams)
+      const newTeam = await supabase.select().from(teams)
       assertEquals(newTeam.length, 1)
       assertEquals(newTeam[0].id, teamChangeRequest.conversation.team!.id)
       assertEquals(newTeam[0].name, 'new name')

@@ -11,4 +11,4 @@ const config = {
 const client = postgres(Deno.env.get('DB_POOL_URL')!, config)
 const supabase: PostgresJsDatabase = drizzle(client)
 
-export default supabase
+export { client, supabase as default }

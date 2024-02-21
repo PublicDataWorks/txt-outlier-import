@@ -12,32 +12,33 @@ import {
   users,
 } from '../drizzle/schema.ts'
 import { RuleType } from '../types.ts'
-import { db, req } from './utils.ts'
+import { req } from './utils.ts'
 import {
   conversationAssigneeChangeRequest,
   conversationCLosedRequest,
   conversationReopenedRequest,
 } from './fixtures/conversation-change-request.ts'
+import supabase from '../database.ts'
 
 describe(
   'Conversation',
   { sanitizeOps: false, sanitizeResources: false },
   () => {
     it('closed', async () => {
-      const existingConvos = await db.select().from(conversations)
+      const existingConvos = await supabase.select().from(conversations)
       assertEquals(existingConvos.length, 0)
-      const existingOrgs = await db.select().from(organizations)
+      const existingOrgs = await supabase.select().from(organizations)
       assertEquals(existingOrgs.length, 0)
-      const existingConvoUsers = await db.select().from(conversationsUsers)
+      const existingConvoUsers = await supabase.select().from(conversationsUsers)
       assertEquals(existingConvoUsers.length, 0)
-      const existingUsers = await db.select().from(users)
+      const existingUsers = await supabase.select().from(users)
       assertEquals(existingUsers.length, 0)
-      const existingTeams = await db.select().from(teams)
+      const existingTeams = await supabase.select().from(teams)
       assertEquals(existingTeams.length, 0)
 
       await req(JSON.stringify(conversationCLosedRequest))
 
-      const newConvo = await db.select().from(conversations)
+      const newConvo = await supabase.select().from(conversations)
       assertEquals(newConvo.length, 1)
       assertEquals(newConvo[0].id, conversationCLosedRequest.conversation.id)
       assertEquals(
@@ -104,13 +105,13 @@ describe(
       )
       assert(newConvo[0].closed)
 
-      const history = await db.select().from(conversationHistory)
+      const history = await supabase.select().from(conversationHistory)
       assertEquals(history.length, 1)
       assertEquals(history[0].changeType, RuleType.ConversationClosed)
       assertEquals(history[0].conversationId, newConvo[0].id)
       assertEquals(history[0].teamId, null)
 
-      const org = await db.select().from(organizations)
+      const org = await supabase.select().from(organizations)
       assertEquals(org.length, 1)
       assertEquals(
         org[0].id,
@@ -121,13 +122,13 @@ describe(
         conversationCLosedRequest.conversation.organization.name,
       )
 
-      const convoUsers = await db.select().from(conversationsUsers)
+      const convoUsers = await supabase.select().from(conversationsUsers)
       assertEquals(convoUsers.length, 4)
 
-      const newUsers = await db.select().from(users)
+      const newUsers = await supabase.select().from(users)
       assertEquals(newUsers.length, 4)
 
-      const newTeams = await db.select().from(teams)
+      const newTeams = await supabase.select().from(teams)
       assertEquals(newTeams.length, 1)
       assertEquals(
         newTeams[0].id,
@@ -145,10 +146,10 @@ describe(
 
     it('reopened', async () => {
       await req(JSON.stringify(conversationReopenedRequest))
-      const newConvo = await db.select().from(conversations)
+      const newConvo = await supabase.select().from(conversations)
       assert(!newConvo[0].closed)
 
-      const history = await db.select().from(conversationHistory)
+      const history = await supabase.select().from(conversationHistory)
       assertEquals(history.length, 1)
       assertEquals(history[0].changeType, RuleType.ConversationReopened)
       assertEquals(history[0].conversationId, newConvo[0].id)
@@ -164,7 +165,7 @@ describe(
       newRequest.conversation.drafts_count = 999999
       await req(JSON.stringify(newRequest))
 
-      const newConvo = await db.select().from(conversations)
+      const newConvo = await supabase.select().from(conversations)
       assertEquals(newConvo.length, 1)
       assertEquals(newConvo[0].messagesCount, 999999)
       assertEquals(newConvo[0].draftsCount, 999999)
@@ -172,15 +173,15 @@ describe(
 
     it('assignee change', async () => {
       await req(JSON.stringify(conversationAssigneeChangeRequest))
-      const newConvo = await db.select().from(conversations)
+      const newConvo = await supabase.select().from(conversations)
 
-      const history = await db.select().from(conversationHistory)
+      const history = await supabase.select().from(conversationHistory)
       assertEquals(history.length, 1)
       assertEquals(history[0].changeType, RuleType.ConversationAssigneeChange)
       assertEquals(history[0].conversationId, newConvo[0].id)
       assertEquals(history[0].teamId, null)
 
-      const assignees = await db.select().from(conversationsAssignees)
+      const assignees = await supabase.select().from(conversationsAssignees)
       assertEquals(assignees.length, 1)
       assertEquals(assignees[0].conversationId, newConvo[0].id)
       assertEquals(
@@ -220,7 +221,7 @@ describe(
         conversationAssigneeChangeRequest.conversation.assignees[0].snoozed,
       )
 
-      const assigneeHistory = await db.select().from(
+      const assigneeHistory = await supabase.select().from(
         conversationsAssigneesHistory,
       )
       assertEquals(assigneeHistory.length, 1)

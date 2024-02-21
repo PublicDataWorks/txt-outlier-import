@@ -21,12 +21,12 @@ jobs:
       - run: curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - && sudo apt-get install -y nodejs
       - run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,inbucket,postgrest,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector, pgbouncer
       - run:
-          name: Serve Edge function
-          command: npx supabase functions serve --no-verify-jwt --env-file=supabase/functions/user-actions/tests/.env.test --import-map=supabase/functions/user-actions/import_map.json
-          background: true
-      - run:
           name: Run the tests
           command: |
-            sleep 5
             cd supabase/functions/user-actions
-            /home/circleci/.deno/bin/deno task test
+            /home/circleci/.deno/bin/deno task test:coverage
+      - run:
+          name: Coverage
+          command: |
+            cd supabase/functions/user-actions
+            /home/circleci/.deno/bin/deno coverage cov_profile --exclude=tests
