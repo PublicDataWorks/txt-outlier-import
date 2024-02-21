@@ -10,7 +10,7 @@ import supabase from './database.ts'
 import { authenticationFailed } from './authentication.ts'
 import { deletePendingSecondBroadcastMessage } from './handlers/broadcast-reply-handlers.ts'
 
-Deno.serve(async (req) => {
+const handler = async (req: Request) => {
   let requestBody: RequestBody
   try {
     requestBody = await req.json()
@@ -87,4 +87,8 @@ Deno.serve(async (req) => {
     await handleError(supabase, requestBody, err)
     return new Response('', { status: 400 })
   }
-})
+}
+
+Deno.serve(handler)
+
+export { handler }

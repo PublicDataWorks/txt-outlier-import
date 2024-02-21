@@ -4,20 +4,21 @@ import { assert, assertEquals } from 'https://deno.land/std@0.210.0/assert/mod.t
 
 import { comments, commentsMentions, tasksAssignees, users } from '../drizzle/schema.ts'
 import { MentionUser } from '../types.ts'
-import { db, req } from './utils.ts'
+import { req } from './utils.ts'
+import supabase from '../database.ts';
 
 describe(
   'New comment',
   { sanitizeOps: false, sanitizeResources: false },
   () => {
     it('without mentioning and attachment', async () => {
-      const existingComments = await db.select().from(comments)
+      const existingComments = await supabase.select().from(comments)
       assertEquals(existingComments.length, 0)
       const body = JSON.parse(JSON.stringify(newCommentRequest))
       body.conversation.users = []
       await req(JSON.stringify(body))
 
-      const newComment = await db.select().from(comments)
+      const newComment = await supabase.select().from(comments)
       assertEquals(newComment.length, 1)
       assertEquals(newComment[0].id, newCommentRequest.comment!.id)
       assertEquals(newComment[0].body, newCommentRequest.comment!.body)
@@ -34,7 +35,7 @@ describe(
       assertEquals(newComment[0].taskCompletedAt, null)
       assert(!newComment[0].isTask)
 
-      const newUsers = await db.select().from(users)
+      const newUsers = await supabase.select().from(users)
       assertEquals(newUsers.length, 1)
       assertEquals(newUsers[0].id, newCommentRequest.comment!.author.id)
       assertEquals(newUsers[0].email, newCommentRequest.comment!.author.email)
@@ -56,7 +57,7 @@ describe(
       ]
       await req(JSON.stringify(body))
 
-      const commentMention = await db.select().from(commentsMentions)
+      const commentMention = await supabase.select().from(commentsMentions)
       assertEquals(commentMention[0].commentId, body.comment!.id)
       const mentionedUser = body.comment!
         .mentions[0] as MentionUser
@@ -79,7 +80,7 @@ describe(
       body.comment!.attachment = attachment
       await req(JSON.stringify(body))
 
-      const newComment = await db.select().from(comments)
+      const newComment = await supabase.select().from(comments)
       assertEquals(newComment[0].attachment, attachment)
     })
 
@@ -89,7 +90,7 @@ describe(
         body.comment!.task = { completed_at: null, assignees: [] }
         await req(JSON.stringify(body))
 
-        const newComment = await db.select().from(comments)
+        const newComment = await supabase.select().from(comments)
         assertEquals(newComment[0].taskCompletedAt, null)
         assert(newComment[0].isTask)
       })
@@ -110,7 +111,7 @@ describe(
         }
         await req(JSON.stringify(body))
 
-        const taskAssignee = await db.select().from(tasksAssignees)
+        const taskAssignee = await supabase.select().from(tasksAssignees)
         assertEquals(taskAssignee[0].commentId, newCommentRequest.comment!.id)
         assertEquals(
           taskAssignee[0].userId,
@@ -134,7 +135,7 @@ describe(
         }
         await req(JSON.stringify(body))
 
-        const taskAssignee = await db.select().from(tasksAssignees)
+        const taskAssignee = await supabase.select().from(tasksAssignees)
         assertEquals(taskAssignee[0].commentId, newCommentRequest.comment!.id)
         assertEquals(
           taskAssignee[0].userId,
@@ -147,7 +148,7 @@ describe(
         body.comment!.task = { completed_at: 1704357228, assignees: [] }
         await req(JSON.stringify(body))
 
-        const newComment = await db.select().from(comments)
+        const newComment = await supabase.select().from(comments)
         assertEquals(
           newComment[0].taskCompletedAt!.toString(),
           String(new Date(1704357228 * 1000)),

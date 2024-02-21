@@ -1,3 +1,4 @@
+import supabase from '../../database.ts';
 import {
   AudienceSegment,
   audienceSegments,
@@ -7,7 +8,6 @@ import {
   broadcastsSegments,
   outgoingMessages,
 } from '../../drizzle/schema.ts'
-import { db } from '../utils.ts'
 
 const createOutgoingMessages = async () => {
   const broadcast = await createBroadcast()
@@ -16,7 +16,7 @@ const createOutgoingMessages = async () => {
     { phoneNumber: '+11234567891' },
     { phoneNumber: '+11234567890' },
   ]
-  await db.insert(authors).values(newAuthors).onConflictDoNothing()
+  await supabase.insert(authors).values(newAuthors).onConflictDoNothing()
   const newOutgoingMessages = [
     {
       recipientPhoneNumber: '+11234567891',
@@ -33,7 +33,7 @@ const createOutgoingMessages = async () => {
       isSecond: true,
     },
   ]
-  await db.insert(outgoingMessages).values(newOutgoingMessages)
+  await supabase.insert(outgoingMessages).values(newOutgoingMessages)
 }
 
 const createBroadcast = async (noUsers = 10, runAt?: Date): Promise<Broadcast> => {
@@ -45,7 +45,7 @@ const createBroadcast = async (noUsers = 10, runAt?: Date): Promise<Broadcast> =
     secondMessage: 'second m',
     editable: !runAt,
   }
-  const results = await db.insert(broadcasts).values(broadcast).returning()
+  const results = await supabase.insert(broadcasts).values(broadcast).returning()
   return results[0]
 }
 
@@ -56,14 +56,14 @@ const createSegment = async (broadcastId: number, order = 'ASC'): Promise<Audien
             ORDER BY id ${order}`,
     description: 'faker.lorem.sentence()',
   }
-  const segment = await db.insert(audienceSegments).values(newSegment).onConflictDoNothing().returning()
+  const segment = await supabase.insert(audienceSegments).values(newSegment).onConflictDoNothing().returning()
   const newBroadcastSegments = []
   newBroadcastSegments.push({
     broadcastId,
     segmentId: segment[0].id,
     ratio: 20,
   })
-  await db.insert(broadcastsSegments).values(newBroadcastSegments).onConflictDoNothing()
+  await supabase.insert(broadcastsSegments).values(newBroadcastSegments).onConflictDoNothing()
   return segment[0]
 }
 
