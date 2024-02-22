@@ -8,15 +8,12 @@ import { handleTwilioMessage } from './handlers/twilio-message-handler.ts'
 import { verify } from './authentication.ts'
 import supabase from './database.ts'
 import { authenticationFailed } from './authentication.ts'
-import { deletePendingSecondBroadcastMessage, handleBroadcastReply } from './handlers/broadcast-reply-handlers.ts'
+import { handleBroadcastReply } from './handlers/broadcast-reply-handlers.ts'
 
 const handler = async (req: Request) => {
   let requestBody: RequestBody
-  await handleBroadcastReply(supabase, requestBody)
-  return
   try {
     requestBody = await req.json()
-    console.log(requestBody)
   } catch (err) {
     console.error(`Bad Request: Invalid JSON: ${err}`)
     await authenticationFailed(req, 'Missing request body')
