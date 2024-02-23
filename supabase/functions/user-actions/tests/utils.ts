@@ -37,6 +37,7 @@ export const DROP_ALL_TABLES = `
   DROP TABLE IF EXISTS "user_history" CASCADE;
   DROP TABLE IF EXISTS "broadcast_sent_message_status" CASCADE;
   DROP TABLE IF EXISTS "outgoing_messages" CASCADE;
+  DROP TABLE IF EXISTS "unsubscribed_messages" CASCADE;
 `
 
 export const req = async (body: string) => {
@@ -56,7 +57,6 @@ export const req = async (body: string) => {
   }
   request.headers = new Headers(request.headers)
 
-  console.log('kyky', request.headers.get('X-Hook-Signature'))
   const response = await handler(request)
   await response.text()
   assert(response.ok)
