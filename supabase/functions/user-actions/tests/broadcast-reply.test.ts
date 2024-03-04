@@ -1,9 +1,15 @@
 import { describe, it } from 'testing/bdd.ts'
-import { assertEquals } from 'testing/asserts.ts'
+import { assert, assertEquals } from 'testing/asserts.ts'
 import { eq } from 'drizzle-orm'
 import { faker } from 'faker'
 
-import { broadcastSentMessageStatus, outgoingMessages, unsubscribedMessages } from '../drizzle/schema.ts'
+import {
+  BroadcastMessageStatus,
+  broadcastSentMessageStatus,
+  outgoingMessages,
+  twilioMessages,
+  unsubscribedMessages,
+} from '../drizzle/schema.ts'
 import { req } from './utils.ts'
 import { createOutgoingMessages } from './fixtures/outgoing-message.ts'
 import { newIncomingSmsRequest } from './fixtures/incoming-twilio-message-request.ts'
@@ -15,23 +21,36 @@ describe(
   () => {
     it('receive reply before sending first message', async () => {
       await createOutgoingMessages()
+      await seedSentMessages()
       const messagesBefore = await supabase.select().from(outgoingMessages)
       assertEquals(messagesBefore.length, 2)
+      const incomingSms = newIncomingSmsRequest
+      incomingSms.message!.delivered_at = Date.now() / 1000 - 2 * 60 * 60
 
-      await req(JSON.stringify(newIncomingSmsRequest))
+      await req(JSON.stringify(incomingSms))
       const messagesAfter = await supabase.select().from(outgoingMessages)
       assertEquals(messagesAfter.length, 2)
+
+      const incomingMessages = await supabase.select().from(twilioMessages)
+      assertEquals(incomingMessages.length, 1)
+      assert(!incomingMessages[0].isBroadcastReply)
     })
 
     it('receive reply after sending first message', async () => {
       await createOutgoingMessages()
+      await seedSentMessages()
       await supabase.delete(outgoingMessages).where(eq(outgoingMessages.isSecond, false))
       const messagesBefore = await supabase.select().from(outgoingMessages)
       assertEquals(messagesBefore.length, 1)
+      const incomingSms = newIncomingSmsRequest
+      incomingSms.message!.delivered_at = Date.now() / 1000 + 2 * 60 * 60
 
-      await req(JSON.stringify(newIncomingSmsRequest))
+      await req(JSON.stringify(incomingSms))
       const messagesAfter = await supabase.select().from(outgoingMessages)
       assertEquals(messagesAfter.length, 0)
+      const incomingMessages = await supabase.select().from(twilioMessages)
+      assertEquals(incomingMessages.length, 1)
+      assert(incomingMessages[0].isBroadcastReply)
     })
 
     it('receive reply after sending second message', async () => {
@@ -77,7 +96,7 @@ describe(
 
       const unsubscribeMsg = newIncomingSmsRequest
       unsubscribeMsg.message!.preview = 'stop'
-      unsubscribeMsg.message!.delivered_at = Date.now() / 1000 + 11 * 60 * 60
+      unsubscribeMsg.message!.delivered_at = Date.now() / 1000 + 35 * 60 * 60
       await req(JSON.stringify(unsubscribeMsg))
 
       const unsubscribeAfter = await supabase.select().from(unsubscribedMessages)
@@ -101,14 +120,14 @@ describe(
       assertEquals(unsubscribeAfter.length, 0)
     })
 
-    it('stop after 12 hours not counted', async () => {
+    it('stop after 36 hours not counted', async () => {
       await createOutgoingMessages()
       await supabase.delete(outgoingMessages)
       await seedSentMessages()
 
       const unsubscribeMsg = newIncomingSmsRequest
       unsubscribeMsg.message!.preview = 'stop'
-      unsubscribeMsg.message!.delivered_at = Date.now() / 1000 + 14 * 60 * 60
+      unsubscribeMsg.message!.delivered_at = Date.now() / 1000 + 38 * 60 * 60
       await req(JSON.stringify(unsubscribeMsg))
       const unsubscribeAfter = await supabase.select().from(unsubscribedMessages)
       assertEquals(unsubscribeAfter.length, 0)
@@ -130,7 +149,7 @@ describe(
 )
 
 const seedSentMessages = async () => {
-  const sentMessages = [
+  const sentMessages: BroadcastMessageStatus[] = [
     {
       recipientPhoneNumber: '+11234567891',
       missiveId: faker.random.uuid(),
