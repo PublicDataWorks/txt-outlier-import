@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     machine:
-      image: ubuntu-2204:2022.04.2
+      image: default
     steps:
       - checkout
       - run: curl -fsSL https://deno.land/install.sh | sh
@@ -29,4 +29,4 @@ jobs:
           name: Coverage
           command: |
             cd supabase/functions/user-actions
-            /home/circleci/.deno/bin/deno coverage cov_profile --exclude=tests
+            /home/circleci/.deno/bin/deno task coverage
