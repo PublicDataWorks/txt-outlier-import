@@ -8,6 +8,7 @@
     "slack-API/": "https://deno.land/x/deno_slack_api@2.1.1/",
     "encoding/": "https://deno.land/std@0.210.0/encoding/",
     "date-fns/": "https://deno.land/x/date_fns@v2.15.0/",
-    "faker": "https://deno.land/x/deno_faker@v1.0.3/mod.ts"
+    "faker": "https://deno.land/x/deno_faker@v1.0.3/mod.ts",
+    "log": "https://deno.land/std@0.212.0/log/mod.ts"
   }
 }

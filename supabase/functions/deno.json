@@ -41,9 +41,11 @@
   "tasks": {
     "fmt": "deno fmt **/*.ts",
     "lint": "deno lint **/*.ts",
-    "test": "TZ=UTC deno test --no-check --allow-all --env=tests/.env.test --import-map=tests/import_map.json --quiet tests/",
-    "test:coverage": "TZ=UTC deno test --no-check --allow-all --env=tests/.env.test --import-map=tests/import_map.json --coverage=cov_profile --quiet tests/",
-    "dev": "deno run --watch --allow-all --env=.env index.ts"
+    "test": "TZ=UTC deno test --no-check --allow-all --env=user-actions/tests/.env.test --import-map=user-actions/tests/import_map.json --quiet user-actions/tests/",
+    "test:debug": "TZ=UTC deno test --no-check --allow-all --env=user-actions//tests/.env.test --import-map=user-actions/tests/import_map.json user-actions/tests/",
+    "test:coverage": "TZ=UTC deno test --no-check --allow-all --env=user-actions//tests/.env.test --import-map=user-actions/tests/import_map.json --coverage=cov_profile --quiet user-actions/tests/",
+    "coverage": "deno coverage cov_profile --exclude=tests",
+    "dev": "deno run --watch --allow-all --env=user-actions/.env user-actions/index.ts"
   },
   "importMap": "./import_map.json"
 }

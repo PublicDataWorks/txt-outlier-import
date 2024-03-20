@@ -1,3 +1,5 @@
+import * as log from 'log'
+
 import { RequestBody, RuleType } from './types.ts'
 import { handleError, insertHistory } from './handlers/utils.ts'
 import { handleNewComment } from './handlers/comment-handler.ts'
@@ -15,14 +17,14 @@ const handler = async (req: Request) => {
   try {
     requestBody = await req.json()
   } catch (err) {
-    console.error(`Bad Request: Invalid JSON: ${err}`)
+    log.error(`Bad Request: Invalid JSON: ${err}`)
     await authenticationFailed(req, 'Missing request body')
     return new Response('', { status: 202 })
   }
 
   const requestHeaderSig = req.headers.get('X-Hook-Signature')
   if (!requestHeaderSig) {
-    console.error('Bad Request: X-Hook-Signature header is missing')
+    log.error('Bad Request: X-Hook-Signature header is missing')
     await authenticationFailed(
       req,
       'Missing authentication header',
@@ -75,13 +77,13 @@ const handler = async (req: Request) => {
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`)
     }
 
-    console.log(`Successfully handled rule: ${requestBody.rule.id}`)
+    log.info(`Successfully handled rule: ${requestBody.rule.id}`)
     return new Response('Ok', { status: 200 })
   } catch (err) {
-    console.error(
+    log.error(
       `An error occurred: ${err.message}.
-    Request body: ${JSON.stringify(requestBody)}
-    Stack trace: ${err.stack}`,
+      Request body: ${JSON.stringify(requestBody)}
+      Stack trace: ${err.stack}`,
     )
     await handleError(supabase, requestBody, err)
     return new Response('', { status: 400 })
