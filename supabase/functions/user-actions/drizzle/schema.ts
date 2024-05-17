@@ -80,6 +80,9 @@ export const broadcastSentMessageStatus = pgTable('broadcast_sent_message_status
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
   twilioSentStatus: twilioStatus('twilio_sent_status').default('delivered').notNull(),
   twilioId: text('twilio_id'),
+  audienceSegmentId: bigint('audience_segment_id', { mode: 'number' }).references(() => audienceSegments.id, {
+    onDelete: 'cascade',
+  }),
   message: text('message').notNull(),
 }, (table) => {
   return {
