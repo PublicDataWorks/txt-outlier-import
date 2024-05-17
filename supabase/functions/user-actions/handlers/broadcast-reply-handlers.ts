@@ -4,6 +4,7 @@ import { addMinutes } from 'date-fns/index.js'
 
 import { RequestBody, TwilioRequestMessage } from '../types.ts'
 import {
+  authors,
   broadcastSentMessageStatus,
   outgoingMessages,
   twilioMessages,
@@ -30,14 +31,16 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
     await db.update(twilioMessages)
       .set({ isBroadcastReply: true })
       .where(eq(twilioMessages.id, requestMessage.id))
-    if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.toLowerCase())) {
-      const newUnsubscribedMessage: UnsubscribedMessage = {
-        broadcastId: sentMessage[0].broadcastId,
-        twilioMessageId: requestMessage.id,
-        replyTo: sentMessage[0].id,
-      }
-      await db.insert(unsubscribedMessages).values(newUnsubscribedMessage)
+  }
+  if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.toLowerCase())) {
+    const newUnsubscribedMessage: UnsubscribedMessage = {
+      broadcastId: sentMessage[0] ? sentMessage[0].broadcastId : null,
+      twilioMessageId: requestMessage.id,
+      replyTo: sentMessage[0] ? sentMessage[0].id : null,
     }
+    await db.insert(unsubscribedMessages).values(newUnsubscribedMessage)
+    await db.update(authors).set({ unsubscribed: true })
+      .where(eq(authors.phoneNumber, requestMessage.to_fields))
   }
 }
 

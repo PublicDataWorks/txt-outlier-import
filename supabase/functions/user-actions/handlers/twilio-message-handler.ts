@@ -27,9 +27,11 @@ const insertTwilioMessage = async (
     adaptTwilioRequestAuthor(requestMessage.from_field),
     adaptTwilioRequestAuthor(requestMessage.to_fields[0]), // TODO: Handle multiple recipients
   ])
+
   const filteredTwilioAuthors = [...twilioAuthors].filter((twilioAuthor) =>
     !requestBody.conversation.authors.some((author) => author.phone_number === twilioAuthor.phone_number)
   )
+
   await upsertAuthor(tx, filteredTwilioAuthors)
   // Sample data:
   // from_field: {

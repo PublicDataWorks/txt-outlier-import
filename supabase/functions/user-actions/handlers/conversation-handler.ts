@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { PostgresJsDatabase, PostgresJsTransaction } from 'drizzle-orm/postgres-js'
 
-import { upsertConversation, upsertRule } from './utils.ts'
+import { upsertConversation, upsertOrganization, upsertRule } from './utils.ts'
 import { RequestBody, RequestConversation, RuleType } from '../types.ts'
 import {
   ConversationAssignee,
@@ -20,28 +20,37 @@ export const handleConversationStatusChanged = async (
 ) => {
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule)
-    await tx.insert(teams).values({ id: requestBody.conversation.team!.id })
-      .onConflictDoNothing()
+    const teamId = requestBody.conversation.team ? requestBody.conversation.team!.id : null
+
+    await upsertOrganization(tx, requestBody.conversation.organization)
+
+    if (requestBody.conversation.team) {
+      const teamData = {
+        id: requestBody.conversation.team.id,
+        name: requestBody.conversation.team.name,
+        organizationId: requestBody.conversation.organization.id,
+      }
+      await tx.insert(teams).values({ id: requestBody.conversation.team.id })
+        .onConflictDoNothing()
+      await tx.insert(teams).values(teamData).onConflictDoUpdate({
+        target: teams.id,
+        set: { name: teamData.name, organizationId: teamData.organizationId },
+      })
+    }
+
     await upsertConversation(
       tx,
       requestBody.conversation,
       changeType === RuleType.ConversationClosed,
       false,
       true,
-      requestBody.conversation.team!.id,
+      teamId,
     )
-    const teamData = {
-      id: requestBody.conversation.team!.id,
-      name: requestBody.conversation.team!.name,
-      organizationId: requestBody.conversation.organization.id,
-    }
-    await tx.insert(teams).values(teamData).onConflictDoUpdate({
-      target: teams.id,
-      set: { name: teamData.name, organizationId: teamData.organizationId },
-    })
+
     const convoHistory = {
       conversationId: requestBody.conversation.id,
       changeType: changeType,
+      teamId: teamId,
     }
     await tx.insert(conversationHistory).values(convoHistory)
   })
