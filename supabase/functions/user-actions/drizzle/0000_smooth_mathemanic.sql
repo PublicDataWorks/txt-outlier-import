@@ -314,9 +314,9 @@ CREATE TABLE IF NOT EXISTS "twilio_messages" (
 CREATE TABLE IF NOT EXISTS "unsubscribed_messages" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"broadcast_id" bigint NOT NULL,
+	"broadcast_id" bigint,
 	"twilio_message_id" uuid NOT NULL,
-	"reply_to" bigint NOT NULL
+	"reply_to" bigint
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_history" (

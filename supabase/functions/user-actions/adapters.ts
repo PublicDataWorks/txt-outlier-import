@@ -114,7 +114,7 @@ export const adaptTwilioRequestAuthor = (
 ): RequestAuthor => {
   return {
     name: twilioUser.name,
-    phone_number: twilioUser.id,
+    phone_number: twilioUser.username ? twilioUser.username : twilioUser.id,
   }
 }
 

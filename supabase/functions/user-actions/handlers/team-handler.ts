@@ -11,27 +11,30 @@ export const handleTeamChange = async (
   await db.transaction(async (tx) => {
     await upsertRule(tx, requestBody.rule)
     await upsertOrganization(tx, requestBody.conversation.organization)
-    const teamData = {
-      id: requestBody.conversation.team!.id,
-      name: requestBody.conversation.team!.name,
-      organizationId: requestBody.conversation.organization.id,
+    if (requestBody.conversation.team) {
+      const teamData = {
+        id: requestBody.conversation.team.id,
+        name: requestBody.conversation.team!.name,
+        organizationId: requestBody.conversation.organization.id,
+      }
+      await tx.insert(teams).values(teamData).onConflictDoUpdate({
+        target: teams.id,
+        set: { name: teamData.name, organizationId: teamData.organizationId },
+      })
     }
-    await tx.insert(teams).values(teamData).onConflictDoUpdate({
-      target: teams.id,
-      set: { name: teamData.name, organizationId: teamData.organizationId },
-    })
+    const teamId = requestBody.conversation.team ? requestBody.conversation.team!.id : null
     await upsertConversation(
       tx,
       requestBody.conversation,
       null,
       false,
       false,
-      requestBody.conversation.team!.id,
+      teamId,
     )
     const convoHistory = {
       conversationId: requestBody.conversation.id,
       changeType: RuleType.TeamChanged,
-      teamId: requestBody.conversation.team!.id,
+      teamId: teamId,
     }
     await tx.insert(conversationHistory).values(convoHistory)
   })

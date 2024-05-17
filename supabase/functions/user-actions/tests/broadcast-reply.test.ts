@@ -120,7 +120,7 @@ describe(
       assertEquals(unsubscribeAfter.length, 0)
     })
 
-    it('stop after 36 hours not counted', async () => {
+    it('stop after 36 hours is also counted', async () => {
       await createOutgoingMessages()
       await supabase.delete(outgoingMessages)
       await seedSentMessages()
@@ -130,10 +130,10 @@ describe(
       unsubscribeMsg.message!.delivered_at = Date.now() / 1000 + 38 * 60 * 60
       await req(JSON.stringify(unsubscribeMsg))
       const unsubscribeAfter = await supabase.select().from(unsubscribedMessages)
-      assertEquals(unsubscribeAfter.length, 0)
+      assertEquals(unsubscribeAfter.length, 1)
     })
 
-    it('stop before second message not counted', async () => {
+    it('stop before second message is counted', async () => {
       await createOutgoingMessages()
       await supabase.delete(outgoingMessages)
       await seedSentMessages()
@@ -143,7 +143,7 @@ describe(
       unsubscribeMsg.message!.delivered_at = Date.now() / 1000 - 10000
       await req(JSON.stringify(unsubscribeMsg))
       const unsubscribeAfter = await supabase.select().from(unsubscribedMessages)
-      assertEquals(unsubscribeAfter.length, 0)
+      assertEquals(unsubscribeAfter.length, 1)
     })
   },
 )

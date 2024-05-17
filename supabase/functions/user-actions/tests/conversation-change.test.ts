@@ -109,7 +109,7 @@ describe(
       assertEquals(history.length, 1)
       assertEquals(history[0].changeType, RuleType.ConversationClosed)
       assertEquals(history[0].conversationId, newConvo[0].id)
-      assertEquals(history[0].teamId, null)
+      assertEquals(history[0].teamId, 'fb0b601e-7d6e-4248-8882-4f129fdfe43c')
 
       const org = await supabase.select().from(organizations)
       assertEquals(org.length, 1)
@@ -153,7 +153,7 @@ describe(
       assertEquals(history.length, 1)
       assertEquals(history[0].changeType, RuleType.ConversationReopened)
       assertEquals(history[0].conversationId, newConvo[0].id)
-      assertEquals(history[0].teamId, null)
+      assertEquals(history[0].teamId, 'fb0b601e-7d6e-4248-8882-4f129fdfe43c')
     })
 
     it('upsert', async () => {
