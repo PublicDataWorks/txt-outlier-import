@@ -1,7 +1,6 @@
 import {
   bigint,
   boolean,
-  doublePrecision,
   index,
   integer,
   interval,
@@ -9,6 +8,7 @@ import {
   pgEnum,
   pgTable,
   serial,
+  smallint,
   text,
   timestamp,
   unique,
@@ -20,7 +20,7 @@ export const aalLevel = pgEnum('aal_level', ['aal1', 'aal2', 'aal3'])
 export const codeChallengeMethod = pgEnum('code_challenge_method', ['s256', 'plain'])
 export const factorStatus = pgEnum('factor_status', ['unverified', 'verified'])
 export const factorType = pgEnum('factor_type', ['totp', 'webauthn'])
-export const twilioStatus = pgEnum('twilio_status', ['delivered', 'undelivered', 'failed', 'received'])
+export const twilioStatus = pgEnum('twilio_status', ['delivered', 'undelivered', 'failed', 'received', 'sent'])
 export const keyStatus = pgEnum('key_status', ['default', 'valid', 'invalid', 'expired'])
 export const keyType = pgEnum('key_type', [
   'aead-ietf',
@@ -50,7 +50,7 @@ export const broadcastsSegments = pgTable('broadcasts_segments', {
   segmentId: bigint('segment_id', { mode: 'number' }).notNull().references(() => audienceSegments.id, {
     onUpdate: 'cascade',
   }),
-  ratio: doublePrecision('ratio').notNull(),
+  ratio: smallint('ratio').notNull(),
   firstMessage: text('first_message'),
   secondMessage: text('second_message'),
 }, (table) => {
@@ -80,12 +80,14 @@ export const broadcastSentMessageStatus = pgTable('broadcast_sent_message_status
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
   twilioSentStatus: twilioStatus('twilio_sent_status').default('delivered').notNull(),
   twilioId: text('twilio_id'),
-  audienceSegmentId: bigint('audience_segment_id', { mode: 'number' }).references(() => audienceSegments.id, {
-    onDelete: 'cascade',
-  }),
+  audienceSegmentId: bigint('audience_segment_id', { mode: 'number' }).references(() => audienceSegments.id),
   message: text('message').notNull(),
 }, (table) => {
   return {
+    recipientPhoneNumberIdx: index('broadcast_sent_message_status_recipient_phone_number_idx').on(
+      table.recipientPhoneNumber,
+    ),
+    createdAtIdx: index('broadcast_sent_message_status_created_at_idx').on(table.createdAt),
     broadcastSentMessageStatusMissiveIdKey: unique('broadcast_sent_message_status_missive_id_key').on(table.missiveId),
   }
 })
