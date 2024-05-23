@@ -2,7 +2,7 @@ import { PostgresJsDatabase, PostgresJsTransaction } from 'drizzle-orm/postgres-
 
 import { RequestBody } from '../types.ts'
 
-import { upsertAuthor, upsertConversation, upsertRule } from './utils.ts'
+import { upsertAuthor, upsertConversation, upsertLabel, upsertRule } from './utils.ts'
 import { twilioMessages } from '../drizzle/schema.ts'
 import { adaptTwilioMessage, adaptTwilioRequestAuthor } from '../adapters.ts'
 
@@ -14,6 +14,7 @@ export const handleTwilioMessage = async (
     await upsertRule(tx, requestBody.rule)
     await upsertConversation(tx, requestBody.conversation)
     await insertTwilioMessage(tx, requestBody)
+    await upsertLabel(tx, requestBody.conversation)
   })
 }
 

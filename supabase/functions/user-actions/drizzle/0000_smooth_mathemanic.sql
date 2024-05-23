@@ -206,7 +206,8 @@ CREATE TABLE IF NOT EXISTS "conversations_labels" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"conversation_id" uuid NOT NULL,
 	"label_id" uuid NOT NULL,
-	"updated_at" timestamp with time zone
+	"updated_at" timestamp with time zone,
+	"is_archived" boolean DEFAULT false
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "conversations_users" (
@@ -309,7 +310,8 @@ CREATE TABLE IF NOT EXISTS "twilio_messages" (
 	"attachments" text,
 	"from_field" text NOT NULL,
 	"to_field" text NOT NULL,
-	"is_broadcast_reply" boolean DEFAULT false NOT NULL
+	"is_broadcast_reply" boolean DEFAULT false NOT NULL,
+  "reply_to_broadcast" bigint
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "unsubscribed_messages" (
@@ -518,6 +520,12 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "twilio_messages" ADD CONSTRAINT "twilio_messages_to_field_authors_phone_number_fk" FOREIGN KEY ("to_field") REFERENCES "authors"("phone_number") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ALTER TABLE "twilio_messages" ADD CONSTRAINT "broadcast_reply_to_broadcasts_id_fk" FOREIGN KEY ("reply_to_broadcast") REFERENCES "broadcasts"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

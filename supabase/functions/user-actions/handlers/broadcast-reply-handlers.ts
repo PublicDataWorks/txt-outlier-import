@@ -29,7 +29,7 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
   ).orderBy(desc(broadcastSentMessageStatus.createdAt), desc(broadcastSentMessageStatus.id)).limit(1)
   if (sentMessage.length > 0) {
     await db.update(twilioMessages)
-      .set({ isBroadcastReply: true })
+      .set({ isBroadcastReply: true, replyToBroadcast: sentMessage[0].broadcastId })
       .where(eq(twilioMessages.id, requestMessage.id))
   }
   if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.toLowerCase())) {

@@ -148,6 +148,7 @@ export const conversationsLabels = pgTable('conversations_labels', {
   conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
   labelId: uuid('label_id').notNull().references(() => labels.id, { onDelete: 'cascade' }),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
+  isArchived: boolean('is_archived').default(false),
 }, (table) => {
   return {
     conversationLabel: uniqueIndex('conversation_label').on(table.conversationId, table.labelId),
@@ -307,6 +308,7 @@ export const twilioMessages = pgTable('twilio_messages', {
   fromField: text('from_field').notNull().references(() => authors.phoneNumber),
   toField: text('to_field').notNull().references(() => authors.phoneNumber),
   isBroadcastReply: boolean('is_broadcast_reply').default(false).notNull(),
+  replyToBroadcast: bigint('reply_to_broadcast', { mode: 'number' }).references(() => broadcasts.id),
 }, (table) => {
   return {
     deliveredAtIdx: index('twilio_messages_delivered_at_idx').on(table.deliveredAt),
