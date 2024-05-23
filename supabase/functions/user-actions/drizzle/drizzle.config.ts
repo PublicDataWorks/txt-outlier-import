@@ -3,10 +3,10 @@ import { defineConfig } from 'drizzle-kit'
 export default defineConfig({
   out: '.',
   schema: './schema.ts',
-  driver: 'pg',
+  dialect: 'postgresql',
   dbCredentials: {
     user: 'postgres',
-    password: '',
+    password: 'postgres',
     host: '',
     port: 5432,
     database: 'postgres',

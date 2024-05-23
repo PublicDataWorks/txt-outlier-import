@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, notInArray, sql } from 'drizzle-orm'
 import { PostgresJsDatabase, PostgresJsTransaction } from 'drizzle-orm/postgres-js'
 
 import {
@@ -13,14 +13,18 @@ import {
   Author,
   authors,
   ConversationAuthor,
+  ConversationLabel,
   conversations,
   conversationsAssignees,
   conversationsAuthors,
+  conversationsLabels,
   conversationsUsers,
   ConversationUser,
   Err,
   errors,
   invokeHistory,
+  Label,
+  labels,
   organizations,
   rules,
   User,
@@ -223,6 +227,56 @@ export const upsertAuthor = async (
   }
   return await tx.insert(authors).values([...uniqueAuthors])
     .onConflictDoNothing().returning()
+}
+
+export const upsertLabel = async (
+  // deno-lint-ignore no-explicit-any
+  tx: PostgresJsTransaction<any, any>,
+  requestConvo: RequestConversation,
+) => {
+  const requestLabels = new Set<Label>()
+  const requestConversationsLabels = new Set<ConversationLabel>()
+  const labelIds: string[] = []
+  for (const label of requestConvo.shared_labels) {
+    requestLabels.add({
+      id: label.id,
+      name: label.name,
+      nameWithParentNames: label.name_with_parent_names,
+      color: label.color,
+      parent: label.parent,
+      shareWithOrganization: label.share_with_organization,
+      visibility: label.visibility,
+    })
+    requestConversationsLabels.add({
+      conversationId: requestConvo.id,
+      labelId: label.id,
+    })
+    labelIds.push(label.id)
+  }
+
+  if (requestLabels.size > 0) {
+    await tx.insert(labels).values([...requestLabels]).onConflictDoUpdate({
+      target: labels.id,
+      set: {
+        name: sql`excluded.name`,
+        nameWithParentNames: sql`excluded.name_with_parent_names`,
+        color: sql`excluded.color`,
+        parent: sql`excluded.parent`,
+        shareWithOrganization: sql`excluded.share_with_organization`,
+        visibility: sql`excluded.visibility`,
+      },
+    })
+  }
+  if (requestConversationsLabels.size > 0) {
+    await tx.update(conversationsLabels).set({ isArchived: true })
+      .where(and(
+        eq(conversationsLabels.conversationId, requestConvo.id!),
+        notInArray(conversationsLabels.labelId, labelIds),
+      ))
+    await tx.insert(conversationsLabels).values([
+      ...requestConversationsLabels,
+    ]).onConflictDoNothing()
+  }
 }
 
 export const insertHistory = async (
