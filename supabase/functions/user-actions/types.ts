@@ -142,7 +142,10 @@ export type TwilioRequestMessage = {
   account_author: TwilioRequestAuthor
   account_recipients: TwilioRequestAuthor[]
   attachments: string[]
-  // TODO: author is missing
+  author: {
+    id: string
+  }
+  senderId?: string
 }
 
 export interface ErrorDetail {

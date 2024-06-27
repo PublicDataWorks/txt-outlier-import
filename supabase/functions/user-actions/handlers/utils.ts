@@ -36,7 +36,6 @@ import {
   adaptConversation,
   adaptConversationAssignee,
   adaptConversationUser,
-  adaptHistory,
   adaptOrg,
   adaptRule,
 } from '../adapters.ts'
@@ -84,7 +83,7 @@ export const upsertUsers = async (
   )
   const changelogs: UserHistory[] = []
   for (const user of newUsers) {
-    const existingUser = existingUsers.find((u) => u.id === user.id)
+    const existingUser = existingUsers.find((u: User) => u.id === user.id)
     if (
       !existingUser || existingUser.email !== user.email ||
       existingUser.name !== user.name
@@ -283,6 +282,8 @@ export const insertHistory = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
 ) => {
-  const newHistory = adaptHistory(requestBody)
-  await db.insert(invokeHistory).values(newHistory)
+  await db.insert(invokeHistory).values({
+    conversationId: requestBody.conversation!.id,
+    requestBody: sql`${requestBody}::jsonb`,
+  })
 }
