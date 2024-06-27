@@ -74,32 +74,15 @@ ALTER TABLE "conversations_labels" DROP CONSTRAINT "conversations_labels_convers
 --> statement-breakpoint
 ALTER TABLE "outgoing_messages" DROP CONSTRAINT "outgoing_messages_recipient_phone_number_authors_phone_number_fk";
 --> statement-breakpoint
-ALTER TABLE "unsubscribed_messages" DROP CONSTRAINT "unsubscribe_messages_broadcast_id_broadcasts_id_fk";
---> statement-breakpoint
-ALTER TABLE "unsubscribed_messages" DROP CONSTRAINT "unsubscribe_messages_twilio_message_id_twilio_messages_id_fk";
---> statement-breakpoint
-ALTER TABLE "unsubscribed_messages" DROP CONSTRAINT "unsubscribe_messages_reply_to_broadcast_sent_message_status_id_fk";
---> statement-breakpoint
 DROP INDEX IF EXISTS "conversation_label";--> statement-breakpoint
 DROP INDEX IF EXISTS "twilio_messages_delivered_at_idx";--> statement-breakpoint
-ALTER TABLE "audience_segments" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
-ALTER TABLE "broadcast_sent_message_status" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
-ALTER TABLE "broadcasts" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
-ALTER TABLE "broadcasts_segments" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
 ALTER TABLE "broadcasts_segments" ALTER COLUMN "ratio" SET DATA TYPE smallint;--> statement-breakpoint
-ALTER TABLE "invoke_history" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
 ALTER TABLE "labels" ALTER COLUMN "share_with_organization" DROP NOT NULL;--> statement-breakpoint
-ALTER TABLE "outgoing_messages" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
-ALTER TABLE "unsubscribed_messages" ALTER COLUMN "id" SET DATA TYPE bigserial;--> statement-breakpoint
 ALTER TABLE "unsubscribed_messages" ALTER COLUMN "broadcast_id" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "unsubscribed_messages" ALTER COLUMN "reply_to" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "audience_segments" ADD COLUMN "name" text;--> statement-breakpoint
 ALTER TABLE "authors" ADD COLUMN "zipcode" varchar;--> statement-breakpoint
 ALTER TABLE "authors" ADD COLUMN "email" text;--> statement-breakpoint
-ALTER TABLE "broadcast_sent_message_status" ADD COLUMN "audience_segment_id" bigint;--> statement-breakpoint
-ALTER TABLE "conversations_labels" ADD COLUMN "is_archived" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "twilio_messages" ADD COLUMN "is_broadcast_reply" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "twilio_messages" ADD COLUMN "reply_to_broadcast" bigint;--> statement-breakpoint
 ALTER TABLE "twilio_messages" ADD COLUMN "sender_id" uuid;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "broadcast_sent_message_status_recipient_phone_number_idx" ON "broadcast_sent_message_status" ("recipient_phone_number");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "broadcast_sent_message_status_created_at_idx" ON "broadcast_sent_message_status" ("created_at");--> statement-breakpoint
@@ -134,24 +117,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "twilio_messages" ADD CONSTRAINT "twilio_messages_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_broadcast_id_broadcasts_id_fk" FOREIGN KEY ("broadcast_id") REFERENCES "broadcasts"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_twilio_message_id_twilio_messages_id_fk" FOREIGN KEY ("twilio_message_id") REFERENCES "twilio_messages"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_reply_to_broadcast_sent_message_status_id_fk" FOREIGN KEY ("reply_to") REFERENCES "broadcast_sent_message_status"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

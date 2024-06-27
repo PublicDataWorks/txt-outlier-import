@@ -41,6 +41,9 @@ export const DROP_ALL_TABLES = `
   DROP TABLE IF EXISTS "broadcast_sent_message_status" CASCADE;
   DROP TABLE IF EXISTS "outgoing_messages" CASCADE;
   DROP TABLE IF EXISTS "unsubscribed_messages" CASCADE;
+  DROP TABLE IF EXISTS "audience_segments" CASCADE;
+  DROP TABLE IF EXISTS "broadcasts_segments" CASCADE;
+  DROP TYPE IF EXISTS "twilio_status";
 `
 
 export const req = async (body: string) => {

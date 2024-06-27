@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS "broadcasts_segments" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"broadcast_id" bigint NOT NULL,
-	"segment_id" bigint NOT NULL,
+	"segment_id" int NOT NULL,
 	"ratio" double precision NOT NULL,
 	"first_message" text,
 	"second_message" text,
@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS "twilio_messages" (
   "reply_to_broadcast" bigint
 );
 --> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "unsubscribed_messages" (
+CREATE TABLE IF NOT EXISTS "unsubscribe_messages" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"broadcast_id" bigint,
@@ -526,24 +526,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
 ALTER TABLE "twilio_messages" ADD CONSTRAINT "broadcast_reply_to_broadcasts_id_fk" FOREIGN KEY ("reply_to_broadcast") REFERENCES "broadcasts"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_broadcast_id_broadcasts_id_fk" FOREIGN KEY ("broadcast_id") REFERENCES "broadcasts"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_twilio_message_id_twilio_messages_id_fk" FOREIGN KEY ("twilio_message_id") REFERENCES "twilio_messages"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "unsubscribed_messages" ADD CONSTRAINT "unsubscribed_messages_reply_to_broadcast_sent_message_status_id_fk" FOREIGN KEY ("reply_to") REFERENCES "broadcast_sent_message_status"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
