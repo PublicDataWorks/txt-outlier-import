@@ -7,8 +7,11 @@ import supabase, { client } from '../database.ts'
 
 beforeEach(async () => {
   await supabase.execute(sql.raw(DROP_ALL_TABLES))
-  const sqlScript = Deno.readTextFileSync('user-actions/drizzle/0000_smooth_mathemanic.sql')
-  await supabase.execute(sql.raw(sqlScript))
+  const scripts = ['0000_smooth_mathemanic.sql', '0001_bent_hawkeye.sql']
+  for (const script of scripts) {
+    const sqlScript = Deno.readTextFileSync(`user-actions/drizzle/${script}`)
+    await supabase.execute(sql.raw(sqlScript))
+  }
 })
 
 afterAll(async () => {
