@@ -3169,5 +3169,13 @@
     "https://deno.land/x/postgresjs@v3.4.3/src/result.js": "001ff5e0c8d634674f483d07fbcd620a797e3101f842d6c20ca3ace936260465",
     "https://deno.land/x/postgresjs@v3.4.3/src/subscribe.js": "6ac0679e186ab4e681c55252ff50ac4e567df47a7d1382e6e37928f3e9f1fff8",
     "https://deno.land/x/postgresjs@v3.4.3/src/types.js": "471f4a6c35412aa202a7c177c0a7e5a7c3bd225f01bbde67c947894c1b8bf6ed"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:drizzle-orm@^0.29.3",
+        "npm:postgres@^3.4.3"
+      ]
+    }
   }
 }

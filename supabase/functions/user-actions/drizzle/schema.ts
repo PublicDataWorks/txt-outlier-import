@@ -1,5 +1,6 @@
 import {
   bigint,
+  bigserial,
   boolean,
   index,
   integer,
@@ -12,15 +13,15 @@ import {
   text,
   timestamp,
   unique,
-  uniqueIndex,
   uuid,
+  varchar,
 } from 'npm:drizzle-orm/pg-core'
 
 export const aalLevel = pgEnum('aal_level', ['aal1', 'aal2', 'aal3'])
 export const codeChallengeMethod = pgEnum('code_challenge_method', ['s256', 'plain'])
 export const factorStatus = pgEnum('factor_status', ['unverified', 'verified'])
 export const factorType = pgEnum('factor_type', ['totp', 'webauthn'])
-export const twilioStatus = pgEnum('twilio_status', ['delivered', 'undelivered', 'failed', 'received', 'sent'])
+export const twilioStatus = pgEnum('twilio_status', ['delivered', 'undelivered', 'failed', 'sent', 'received'])
 export const keyStatus = pgEnum('key_status', ['default', 'valid', 'invalid', 'expired'])
 export const keyType = pgEnum('key_type', [
   'aead-ietf',
@@ -38,9 +39,18 @@ export const keyType = pgEnum('key_type', [
 export const equalityOp = pgEnum('equality_op', ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in'])
 export const action = pgEnum('action', ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'ERROR'])
 export const requestStatus = pgEnum('request_status', ['PENDING', 'SUCCESS', 'ERROR'])
+export const oneTimeTokenType = pgEnum('one_time_token_type', [
+  'confirmation_token',
+  'reauthentication_token',
+  'recovery_token',
+  'email_change_token_new',
+  'email_change_token_current',
+  'phone_change_token',
+])
 
 export const broadcastsSegments = pgTable('broadcasts_segments', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   // You can use { mode: "bigint" } if numbers are exceeding js number limitations
   broadcastId: bigint('broadcast_id', { mode: 'number' }).notNull().references(() => broadcasts.id, {
@@ -63,8 +73,19 @@ export const broadcastsSegments = pgTable('broadcasts_segments', {
   }
 })
 
+export const lookupTemplate = pgTable('lookup_template', {
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
+  name: varchar('name'),
+  content: text('content'),
+  type: varchar('type'),
+})
+
 export const broadcastSentMessageStatus = pgTable('broadcast_sent_message_status', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   recipientPhoneNumber: text('recipient_phone_number').notNull().references(() => authors.phoneNumber, {
     onUpdate: 'cascade',
@@ -80,8 +101,9 @@ export const broadcastSentMessageStatus = pgTable('broadcast_sent_message_status
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
   twilioSentStatus: twilioStatus('twilio_sent_status').default('delivered').notNull(),
   twilioId: text('twilio_id'),
-  audienceSegmentId: bigint('audience_segment_id', { mode: 'number' }).references(() => audienceSegments.id),
   message: text('message').notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  audienceSegmentId: bigint('audience_segment_id', { mode: 'number' }).references(() => audienceSegments.id),
 }, (table) => {
   return {
     recipientPhoneNumberIdx: index('broadcast_sent_message_status_recipient_phone_number_idx').on(
@@ -92,26 +114,46 @@ export const broadcastSentMessageStatus = pgTable('broadcast_sent_message_status
   }
 })
 
+export const twilioMessages = pgTable('twilio_messages', {
+  id: uuid('id').defaultRandom().primaryKey().notNull(),
+  preview: text('preview').notNull(),
+  type: text('type'),
+  deliveredAt: timestamp('delivered_at', { withTimezone: true, mode: 'string' }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
+  references: text('references').array().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  externalId: text('external_id'),
+  attachments: text('attachments'),
+  fromField: text('from_field').notNull().references(() => authors.phoneNumber),
+  toField: text('to_field').notNull().references(() => authors.phoneNumber),
+  isBroadcastReply: boolean('is_broadcast_reply').default(false).notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  replyToBroadcast: bigint('reply_to_broadcast', { mode: 'number' }).references(() => broadcasts.id),
+  senderId: uuid('sender_id').references(() => users.id, { onDelete: 'cascade' }),
+}, (table) => {
+  return {
+    duplicateDeliveredAtIdx: index('twilio_messages_duplicate_delivered_at_idx').on(table.deliveredAt),
+    duplicateIsBroadcastReplyIdx: index('twilio_messages_duplicate_is_broadcast_reply_idx').on(table.isBroadcastReply),
+    duplicateFromFieldIdx: index('twilio_messages_duplicate_from_field_idx').on(table.fromField),
+  }
+})
+
 export const unsubscribedMessages = pgTable('unsubscribed_messages', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-  broadcastId: bigint('broadcast_id', { mode: 'number' }).references(() => broadcasts.id, {
-    onDelete: 'cascade',
-  }),
-  twilioMessageId: uuid('twilio_message_id').notNull().references(() => twilioMessages.id, { onDelete: 'cascade' }),
+  broadcastId: bigint('broadcast_id', { mode: 'number' }).references(() => broadcasts.id, { onDelete: 'cascade' }),
+  twilioMessageId: uuid('twilio_message_id').notNull().references(() => twilioMessages.id),
   // You can use { mode: "bigint" } if numbers are exceeding js number limitations
   replyTo: bigint('reply_to', { mode: 'number' }).references(() => broadcastSentMessageStatus.id, {
     onDelete: 'cascade',
   }),
-})
-
-export const authors = pgTable('authors', {
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-  name: text('name'),
-  phoneNumber: text('phone_number').primaryKey().notNull(),
-  unsubscribed: boolean('unsubscribed').default(false).notNull(),
+}, (table) => {
+  return {
+    twilioMessageIdIdx: index('unsubscribed_messages_twilio_message_id_idx').on(table.twilioMessageId),
+    broadcastIdIdx: index('unsubscribed_messages_broadcast_id_idx').on(table.broadcastId),
+  }
 })
 
 export const comments = pgTable('comments', {
@@ -145,13 +187,21 @@ export const conversationHistory = pgTable('conversation_history', {
 export const conversationsLabels = pgTable('conversations_labels', {
   id: serial('id').primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onDelete: 'cascade' }),
-  labelId: uuid('label_id').notNull().references(() => labels.id, { onDelete: 'cascade' }),
+  conversationId: uuid('conversation_id').notNull().references(() => conversations.id, { onUpdate: 'cascade' }),
+  labelId: uuid('label_id').notNull().references(() => labels.id, { onUpdate: 'cascade' }),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-  isArchived: boolean('is_archived').default(false),
+  isArchived: boolean('is_archived').default(false).notNull(),
+})
+
+export const invokeHistory = pgTable('invoke_history', {
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  conversationId: uuid('conversation_id'),
+  requestBody: jsonb('request_body'),
 }, (table) => {
   return {
-    conversationLabel: uniqueIndex('conversation_label').on(table.conversationId, table.labelId),
+    requestBodyIdx: index('invoke_history_request_body_idx').on(table.requestBody),
   }
 })
 
@@ -214,19 +264,8 @@ export const conversationsAssigneesHistory = pgTable('conversations_assignees_hi
 export const conversationsAuthors = pgTable('conversations_authors', {
   id: serial('id').primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  conversationId: uuid('conversation_id').notNull().references(() => conversations.id),
+  conversationId: uuid('conversation_id').notNull(),
   authorPhoneNumber: text('author_phone_number').notNull().references(() => authors.phoneNumber),
-})
-
-export const invokeHistory = pgTable('invoke_history', {
-  id: serial('id').primaryKey().notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  conversationId: uuid('conversation_id'),
-  requestBody: jsonb('request_body'),
-}, (table) => {
-  return {
-    requestBodyIdx: index('invoke_history_request_body_idx').on(table.requestBody),
-  }
 })
 
 export const conversationsUsers = pgTable('conversations_users', {
@@ -267,7 +306,7 @@ export const labels = pgTable('labels', {
   nameWithParentNames: text('name_with_parent_names').default('').notNull(),
   color: text('color'),
   parent: uuid('parent'),
-  shareWithOrganization: boolean('share_with_organization').default(false).notNull(),
+  shareWithOrganization: boolean('share_with_organization').default(false),
   visibility: text('visibility'),
 })
 
@@ -295,26 +334,6 @@ export const teams = pgTable('teams', {
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
 })
 
-export const twilioMessages = pgTable('twilio_messages', {
-  id: uuid('id').defaultRandom().primaryKey().notNull(),
-  preview: text('preview').notNull(),
-  type: text('type'),
-  deliveredAt: timestamp('delivered_at', { withTimezone: true, mode: 'string' }).notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-  references: text('references').array().notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  externalId: text('external_id'),
-  attachments: text('attachments'),
-  fromField: text('from_field').notNull().references(() => authors.phoneNumber),
-  toField: text('to_field').notNull().references(() => authors.phoneNumber),
-  isBroadcastReply: boolean('is_broadcast_reply').default(false).notNull(),
-  replyToBroadcast: bigint('reply_to_broadcast', { mode: 'number' }).references(() => broadcasts.id),
-}, (table) => {
-  return {
-    deliveredAtIdx: index('twilio_messages_delivered_at_idx').on(table.deliveredAt),
-  }
-})
-
 export const userHistory = pgTable('user_history', {
   id: serial('id').primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -337,14 +356,17 @@ export const users = pgTable('users', {
 })
 
 export const audienceSegments = pgTable('audience_segments', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   query: text('query').notNull(),
   description: text('description').notNull(),
+  name: text('name'),
 })
 
 export const broadcasts = pgTable('broadcasts', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
   runAt: timestamp('run_at', { withTimezone: true, mode: 'string' }).notNull(),
   delay: interval('delay').default('00:10:00').notNull(),
@@ -364,11 +386,10 @@ export const organizations = pgTable('organizations', {
 })
 
 export const outgoingMessages = pgTable('outgoing_messages', {
-  id: serial('id').primaryKey().notNull(),
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-  recipientPhoneNumber: text('recipient_phone_number').notNull().references(() => authors.phoneNumber, {
-    onUpdate: 'cascade',
-  }),
+  recipientPhoneNumber: text('recipient_phone_number').notNull().references(() => authors.phoneNumber),
   message: text('message').notNull(),
   // You can use { mode: "bigint" } if numbers are exceeding js number limitations
   broadcastId: bigint('broadcast_id', { mode: 'number' }).notNull().references(() => broadcasts.id, {
@@ -380,6 +401,79 @@ export const outgoingMessages = pgTable('outgoing_messages', {
   }),
   isSecond: boolean('is_second').default(false).notNull(),
   processed: boolean('processed').default(false).notNull(),
+}, (table) => {
+  return {
+    uniquePhoneNumberBroadcastIdIsSecond: unique('unique_phone_number_broadcast_id_is_second').on(
+      table.recipientPhoneNumber,
+      table.broadcastId,
+      table.isSecond,
+    ),
+  }
+})
+
+export const lookupHistory = pgTable('lookup_history', {
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  address: text('address').default(''),
+  taxStatus: varchar('tax_status').default(''),
+  rentalStatus: varchar('rental_status').default(''),
+  zipCode: varchar('zip_code').default(''),
+})
+
+export const weeklyReports = pgTable('weekly_reports', {
+  // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+  id: bigserial('id', { mode: 'number' }).primaryKey().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  conversationStartersSent: integer('conversation_starters_sent').default(0),
+  broadcastReplies: integer('broadcast_replies').default(0),
+  textIns: integer('text_ins').default(0),
+  reporterConversations: integer('reporter_conversations').default(0),
+  unsubscribes: integer('unsubscribes').default(0),
+  userSatisfaction: integer('user_satisfaction').default(0),
+  problemAddressed: integer('problem_addressed').default(0),
+  crisisAverted: integer('crisis_averted').default(0),
+  accountabilityGap: integer('accountability_gap').default(0),
+  source: integer('source').default(0),
+  unsatisfied: integer('unsatisfied').default(0),
+  futureKeyword: integer('future_keyword').default(0),
+  statusRegistered: integer('status_registered').default(0),
+  statusUnregistered: integer('status_unregistered').default(0),
+  statusTaxDebt: integer('status_tax_debt').default(0),
+  statusNoTaxDebt: integer('status_no_tax_debt').default(0),
+  statusCompliant: integer('status_compliant').default(0),
+  statusForeclosed: integer('status_foreclosed').default(0),
+  repliesTotal: integer('replies_total').default(0),
+  repliesProactive: integer('replies_proactive').default(0),
+  repliesReceptive: integer('replies_receptive').default(0),
+  repliesConnected: integer('replies_connected').default(0),
+  repliesPassive: integer('replies_passive').default(0),
+  repliesInactive: integer('replies_inactive').default(0),
+  unsubscribesTotal: integer('unsubscribes_total').default(0),
+  unsubscribesProactive: integer('unsubscribes_proactive').default(0),
+  unsubscribesReceptive: integer('unsubscribes_receptive').default(0),
+  unsubscribesConnected: integer('unsubscribes_connected').default(0),
+  unsubscribesPassive: integer('unsubscribes_passive').default(0),
+  unsubscribesInactive: integer('unsubscribes_inactive').default(0),
+  failedDeliveries: integer('failed_deliveries').default(0),
+})
+
+export const spatialRefSys = pgTable('spatial_ref_sys', {
+  srid: integer('srid').notNull(),
+  authName: varchar('auth_name', { length: 256 }),
+  authSrid: integer('auth_srid'),
+  srtext: varchar('srtext', { length: 2048 }),
+  proj4Text: varchar('proj4text', { length: 2048 }),
+})
+
+export const authors = pgTable('authors', {
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
+  name: text('name'),
+  phoneNumber: text('phone_number').primaryKey().notNull(),
+  unsubscribed: boolean('unsubscribed').default(false).notNull(),
+  zipcode: varchar('zipcode'),
+  email: text('email'),
 })
 
 export type Rule = typeof rules.$inferInsert
