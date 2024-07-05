@@ -50,7 +50,10 @@ const handler = async (req: Request) => {
     switch (requestBody.rule.type) {
       case RuleType.NewComment:
         await handleNewComment(supabase, requestBody)
-        await refreshLookupCache(requestBody.conversation.id, requestBody.latest_message!.references)
+        if (requestBody.latest_message?.references && requestBody.latest_message.references.length > 0) {
+          // Only new comments in SMS conversations
+          await refreshLookupCache(requestBody.conversation.id, requestBody.latest_message.references)
+        }
         break
       case RuleType.TeamChanged:
         await handleTeamChange(supabase, requestBody)
