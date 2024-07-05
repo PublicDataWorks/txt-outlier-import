@@ -11,6 +11,7 @@ import { verify } from './authentication.ts'
 import supabase from './database.ts'
 import { authenticationFailed } from './authentication.ts'
 import { handleBroadcastReply } from './handlers/broadcast-reply-handlers.ts'
+import { refreshLookupCache } from './services/lookup.ts'
 
 const handler = async (req: Request) => {
   let requestBody: RequestBody
@@ -42,12 +43,14 @@ const handler = async (req: Request) => {
       return new Response('', { status: 202 })
     }
   }
+  log.info(`Start handling rule: ${requestBody.rule.id}, ${requestBody.rule.type}`)
 
   await insertHistory(supabase, requestBody)
   try {
     switch (requestBody.rule.type) {
       case RuleType.NewComment:
         await handleNewComment(supabase, requestBody)
+        await refreshLookupCache(requestBody.conversation.id, requestBody.latest_message!.references)
         break
       case RuleType.TeamChanged:
         await handleTeamChange(supabase, requestBody)
@@ -69,15 +72,17 @@ const handler = async (req: Request) => {
       case RuleType.IncomingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody)
         await handleBroadcastReply(supabase, requestBody)
+        await refreshLookupCache(requestBody.conversation.id, requestBody.message!.references)
         break
       case RuleType.OutgoingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody)
+        await refreshLookupCache(requestBody.conversation.id, requestBody.message!.references)
         break
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`)
     }
 
-    log.info(`Successfully handled rule: ${requestBody.rule.id}`)
+    log.info(`Successfully handled rule: ${requestBody.rule.id}, ${requestBody.rule.type}`)
     return new Response('Ok', { status: 200 })
   } catch (err) {
     log.error(
@@ -86,7 +91,8 @@ const handler = async (req: Request) => {
       Stack trace: ${err.stack}`,
     )
     await handleError(supabase, requestBody, err)
-    return new Response('', { status: 400 })
+    // Return 200 to avoid retrying the request
+    return new Response('', { status: 200 })
   }
 }
 
