@@ -1,0 +1,1 @@
+ALTER TABLE "comments" ALTER COLUMN "attachment" SET DATA TYPE jsonb;

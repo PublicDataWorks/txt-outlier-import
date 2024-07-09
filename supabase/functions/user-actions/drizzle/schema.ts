@@ -164,7 +164,7 @@ export const comments = pgTable('comments', {
   isTask: boolean('is_task').default(false).notNull(),
   id: uuid('id').defaultRandom().primaryKey().notNull(),
   conversationId: uuid('conversation_id').references(() => conversations.id, { onDelete: 'cascade' }),
-  attachment: text('attachment'),
+  attachment: jsonb('attachment'),
 })
 
 export const commentsMentions = pgTable('comments_mentions', {

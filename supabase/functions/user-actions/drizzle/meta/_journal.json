@@ -15,6 +15,13 @@
       "when": 1719466145414,
       "tag": "0001_bent_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1720513069957,
+      "tag": "0002_lush_morbius",
+      "breakpoints": true
     }
   ]
 }
