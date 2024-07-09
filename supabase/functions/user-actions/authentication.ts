@@ -73,7 +73,7 @@ async function sendToSlack(
       thread_ts: result.ts,
     })
   } else {
-    throw new Error(`Failed to send message: ${result}`)
+    throw new Error(`Failed to send message: ${JSON.stringify(result)}`)
   }
 }
 

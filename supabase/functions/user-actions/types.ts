@@ -24,7 +24,10 @@ export type RequestBody = {
   rule: RequestRule
   conversation: RequestConversation
   comment?: RequestComment
-  latest_message?: object
+  latest_message?: {
+    id: string
+    references: string[]
+  }
   message?: TwilioRequestMessage
 }
 
