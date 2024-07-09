@@ -45,6 +45,6 @@ const insertTwilioMessage = async (
     requestMessage.from_field.username ? requestMessage.from_field.username : requestMessage.from_field.id,
     requestMessage.to_fields[0].username ? requestMessage.to_fields[0].username : requestMessage.to_fields[0].id,
   )
-  twilioMessage.senderId = requestBody.rule.type === 'outgoing_twilio_message' ? requestMessage.author.id : undefined
+  twilioMessage.senderId = requestBody.rule.type === 'outgoing_twilio_message' ? requestMessage.author?.id : undefined
   await tx.insert(twilioMessages).values(twilioMessage)
 }
