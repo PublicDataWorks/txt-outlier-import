@@ -21,7 +21,7 @@ export const adaptConversation = (
 ): Conversation => {
   return {
     id: requestConvo.id,
-    createdAt: String(new Date(requestConvo.created_at * 1000)),
+    createdAt: (new Date(requestConvo.created_at * 1000)).toISOString(),
     subject: requestConvo.subject,
     latestMessageSubject: requestConvo.latest_message_subject,
     messagesCount: requestConvo.messages_count,
@@ -125,9 +125,9 @@ export const adaptTwilioMessage = (
     id: requestMessage.id,
     preview: requestMessage.preview,
     type: requestMessage.type,
-    deliveredAt: String(new Date(requestMessage.delivered_at * 1000)),
-    updatedAt: String(new Date(requestMessage.updated_at * 1000)),
-    createdAt: String(new Date(requestMessage.created_at * 1000)),
+    deliveredAt: (new Date(requestMessage.delivered_at * 1000)).toISOString(),
+    updatedAt: (new Date(requestMessage.updated_at * 1000)).toISOString(),
+    createdAt: (new Date(requestMessage.created_at * 1000)).toISOString(),
     references: requestMessage.references,
     fromField,
     toField,

@@ -42,10 +42,10 @@ const insertComment = async (
   const comment: Comment = {
     id: requestComment.id,
     body: requestComment.body,
-    createdAt: String(new Date(requestComment.created_at * 1000)),
+    createdAt: (new Date(requestComment.created_at * 1000)).toISOString(),
     attachment: requestComment.attachment,
     taskCompletedAt: requestComment?.task?.completed_at
-      ? String(new Date(requestComment.task.completed_at * 1000))
+      ? (new Date(requestComment.task.completed_at * 1000)).toISOString()
       : null,
     isTask: !!requestComment.task,
     userId: requestComment.author.id!,
