@@ -41,10 +41,10 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
     }
     await db.insert(unsubscribedMessages).values(newUnsubscribedMessage)
     await db.update(authors).set({ unsubscribed: true })
-      .where(eq(authors.phoneNumber, requestMessage.to_fields))
+      .where(eq(authors.phoneNumber, requestMessage.from_field.id))
   } else if (START_TERMS.includes(requestMessage.preview.trim().toLowerCase())) {
     await db.update(authors).set({ unsubscribed: false })
-      .where(eq(authors.phoneNumber, requestMessage.to_fields))
+      .where(eq(authors.phoneNumber, requestMessage.from_field.id))
   }
 }
 
