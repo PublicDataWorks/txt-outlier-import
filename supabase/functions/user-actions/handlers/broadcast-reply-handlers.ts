@@ -32,7 +32,7 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
       .set({ isBroadcastReply: true, replyToBroadcast: sentMessage[0].broadcastId })
       .where(eq(twilioMessages.id, requestMessage.id))
   }
-  if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.toLowerCase())) {
+  if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.trim().toLowerCase())) {
     const newUnsubscribedMessage: UnsubscribedMessage = {
       broadcastId: sentMessage[0] ? sentMessage[0].broadcastId : null,
       twilioMessageId: requestMessage.id,
