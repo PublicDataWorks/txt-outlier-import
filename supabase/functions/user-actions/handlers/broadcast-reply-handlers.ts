@@ -13,6 +13,7 @@ import {
 } from '../drizzle/schema.ts'
 
 const UNSUBSCRIBED_TERMS = ['stop', 'unsubscribe']
+const START_TERMS = ['start']
 
 const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: RequestBody) => {
   const requestMessage = requestBody.message!
@@ -40,6 +41,9 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
     }
     await db.insert(unsubscribedMessages).values(newUnsubscribedMessage)
     await db.update(authors).set({ unsubscribed: true })
+      .where(eq(authors.phoneNumber, requestMessage.to_fields))
+  } else if (START_TERMS.includes(requestMessage.preview.trim().toLowerCase())) {
+    await db.update(authors).set({ unsubscribed: false })
       .where(eq(authors.phoneNumber, requestMessage.to_fields))
   }
 }
