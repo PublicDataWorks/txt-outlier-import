@@ -44,9 +44,8 @@ const handler = async (req: Request) => {
     }
   }
   log.info(`Start handling rule: ${requestBody.rule.id}, ${requestBody.rule.type}`)
-
-  await insertHistory(supabase, requestBody)
   try {
+    await insertHistory(supabase, requestBody)
     switch (requestBody.rule.type) {
       case RuleType.NewComment:
         await handleNewComment(supabase, requestBody)

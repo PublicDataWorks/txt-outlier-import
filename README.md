@@ -47,12 +47,16 @@ Follow these steps to run the project locally:
 
 1. Create a `.env` file from the `.env-example` file.
 
-2. Run:
-
+2. Run Deno server by itself:
 ```bash
 deno task dev
 ```
-
+or run the Supabase Edge function:
+- Add DB_POOL_URL=postgresql://supabase_admin:postgres@db:5432/postgres to `supabase/functions/user-actions/tests/.env.test` 
+- Run
+```bash
+supabase functions serve --no-verify-jwt --env-file=supabase/functions/user-actions/tests/.env.test
+```
 ## Supabase Functions Management
 
 ### Deployment Management
