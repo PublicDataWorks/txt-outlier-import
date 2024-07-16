@@ -23,8 +23,8 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
   const sentMessage = await db.select().from(broadcastSentMessageStatus).where(
     and(
       eq(broadcastSentMessageStatus.recipientPhoneNumber, requestMessage.from_field.id),
-      lt(last36Hours, broadcastSentMessageStatus.createdAt),
-      gt(deliveredDate, broadcastSentMessageStatus.createdAt),
+      lt(last36Hours.toISOString(), broadcastSentMessageStatus.createdAt),
+      gt(deliveredDate.toISOString(), broadcastSentMessageStatus.createdAt),
     ),
   ).orderBy(desc(broadcastSentMessageStatus.createdAt), desc(broadcastSentMessageStatus.id)).limit(1)
   if (sentMessage.length > 0) {
