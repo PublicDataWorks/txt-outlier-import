@@ -224,6 +224,9 @@ export const upsertAuthor = async (
       phoneNumber: author.phone_number,
     })
   }
+  if (uniqueAuthors.size === 0) {
+    return []
+  }
   return await tx.insert(authors).values([...uniqueAuthors])
     .onConflictDoNothing().returning()
 }
