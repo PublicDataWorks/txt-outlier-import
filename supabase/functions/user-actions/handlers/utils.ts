@@ -120,7 +120,7 @@ export const upsertConversation = async (
   if (upsertOrg) {
     await upsertOrganization(tx, requestConvo.organization)
   }
-  const inserted: Author[] = await upsertAuthor(tx, requestConvo.authors)
+  await upsertAuthor(tx, requestConvo.authors)
   // TODO: handle external authors
   const convo = adaptConversation(requestConvo)
   if (closed !== null) {
@@ -145,13 +145,19 @@ export const upsertConversation = async (
     target: conversations.id,
     set: { ...convo },
   })
-  if (inserted.length > 0) {
+  if (requestConvo.authors.length > 0) {
     const convoAuthors: ConversationAuthor[] = []
-    for (const author of inserted) {
-      convoAuthors.push({
-        conversationId: convo.id!,
-        authorPhoneNumber: author.phoneNumber,
-      })
+    for (const author of requestConvo.authors) {
+      const authorIdentifier = author.phone_number || author.name
+      const authorExists = convoAuthors.some(
+        (existingAuthor) => existingAuthor.authorPhoneNumber === authorIdentifier,
+      )
+      if (!authorExists) {
+        convoAuthors.push({
+          conversationId: convo.id!,
+          authorPhoneNumber: authorIdentifier,
+        })
+      }
     }
     await tx.insert(conversationsAuthors).values(convoAuthors)
       .onConflictDoNothing()
@@ -269,7 +275,12 @@ export const upsertLabel = async (
       },
     })
   }
-  if (requestConversationsLabels.size > 0) {
+  if (labelIds.length == 0) {
+    await tx.update(conversationsLabels).set({ isArchived: true })
+      .where(and(
+        eq(conversationsLabels.conversationId, requestConvo.id!),
+      ))
+  } else {
     await tx.update(conversationsLabels).set({ isArchived: true })
       .where(and(
         eq(conversationsLabels.conversationId, requestConvo.id!),
