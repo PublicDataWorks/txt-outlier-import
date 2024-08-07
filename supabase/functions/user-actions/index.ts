@@ -10,7 +10,7 @@ import { handleTwilioMessage } from './handlers/twilio-message-handler.ts'
 import { verify } from './authentication.ts'
 import supabase from './database.ts'
 import { authenticationFailed } from './authentication.ts'
-import { handleBroadcastReply } from './handlers/broadcast-reply-handlers.ts'
+import { handleBroadcastOutgoing, handleBroadcastReply } from './handlers/broadcast-handlers.ts'
 import { refreshLookupCache } from './services/lookup.ts'
 
 const handler = async (req: Request) => {
@@ -79,6 +79,7 @@ const handler = async (req: Request) => {
       case RuleType.OutgoingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody)
         await refreshLookupCache(requestBody.conversation.id, requestBody.message!.references)
+        await handleBroadcastOutgoing(supabase, requestBody)
         break
       default:
         throw new Error(`Unhandled rule type: ${requestBody.rule.type}`)
