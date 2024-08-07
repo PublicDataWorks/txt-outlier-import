@@ -301,3 +301,5 @@ export const insertHistory = async (
     requestBody: sql`${requestBody}::jsonb`,
   })
 }
+
+export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
