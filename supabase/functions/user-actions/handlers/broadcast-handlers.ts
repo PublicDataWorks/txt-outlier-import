@@ -7,6 +7,7 @@ import { RequestBody, TwilioRequestMessage } from '../types.ts'
 import {
   authors,
   broadcastSentMessageStatus,
+  lookupTemplate,
   outgoingMessages,
   twilioMessages,
   UnsubscribedMessage,
@@ -96,26 +97,55 @@ const handleBroadcastOutgoing = async (db: PostgresJsDatabase, requestBody: Requ
     .from(broadcastSentMessageStatus)
     .where(eq(broadcastSentMessageStatus.missiveId, message.id))
     .limit(1)
+
   if (sentStatus.length > 0) {
-    // Wait for Twilio to send the message
-    await delay(3000)
-    const response = await getMissiveMessage(message.id)
+    const secretKeyLookup = await db
+      .select()
+      .from(lookupTemplate)
+      .where(eq(lookupTemplate.name, 'missive_secret_for_broadcast_twilio_status_updater'))
+      .limit(1)
+
+    if (secretKeyLookup.length === 0) {
+      log.error('Missive secret key not found in lookup table')
+      return
+    }
+    const missiveSecretKey = secretKeyLookup[0].content
+
+    const randomDelay = Math.floor(Math.random() * 1001)
+    await delay(randomDelay)
+
+    const response = await getMissiveMessage(message.id, missiveSecretKey)
     if (response) {
       const missiveMessage = response.messages
-      console.log(missiveMessage)
-      const updateData = {
-        twilioSentAt: (missiveMessage.external_id && missiveMessage.delivered_at)
-          ? new Date(missiveMessage.delivered_at * 1000)
-          : null,
-        twilioId: missiveMessage.external_id || null,
-        twilioSentStatus: missiveMessage.external_id ? 'sent' : 'undelivered',
+      if (missiveMessage.external_id) {
+        const updateData = {
+          twilioSentAt: missiveMessage.delivered_at ? new Date(missiveMessage.delivered_at * 1000) : null,
+          twilioId: missiveMessage.external_id,
+          twilioSentStatus: missiveMessage.delivered_at ? 'delivered' : 'sent',
+        }
+        await db
+          .update(broadcastSentMessageStatus)
+          .set(updateData)
+          .where(eq(broadcastSentMessageStatus.missiveId, message.id))
+        log.info(
+          `Successfully updated broadcastSentMessageStatus for ${message.id}. Data: ${JSON.stringify(updateData)}`,
+        )
+      } else {
+        const updateData = {
+          twilioSentAt: null,
+          twilioId: null,
+          twilioSentStatus: 'undelivered',
+        }
+        await db
+          .update(broadcastSentMessageStatus)
+          .set(updateData)
+          .where(eq(broadcastSentMessageStatus.missiveId, message.id))
+        log.info(`Message ${message.id} marked as undelivered.`)
       }
-      await db
-        .update(broadcastSentMessageStatus)
-        .set(updateData)
-        .where(eq(broadcastSentMessageStatus.missiveId, message.id))
-      log.info(`Successfully updated broadcastSentMessageStatus for ${message.id}. Data: ${JSON.stringify(updateData)}`)
+    } else {
+      log.info(`Failed to get message ${message.id}.`)
     }
   }
 }
+
 export { handleBroadcastOutgoing, handleBroadcastReply }
