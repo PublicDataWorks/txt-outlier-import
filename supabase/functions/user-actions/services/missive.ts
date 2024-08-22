@@ -1,12 +1,11 @@
 import * as log from 'log'
 
 const CREATE_MESSAGE_URL = 'https://public.missiveapp.com/v1/messages/'
-const MISSIVE_WEBHOOK_SECRET = Deno.env.get('MISSIVE_WEBHOOK_SECRET')!
 
-const getMissiveMessage = async (id: string) => {
+const getMissiveMessage = async (id: string, secretKey: string) => {
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${MISSIVE_WEBHOOK_SECRET}`,
+    'Authorization': `Bearer ${secretKey}`,
   }
   const url = `${CREATE_MESSAGE_URL}${id}`
   const response = await fetch(url, { method: 'GET', headers: headers })
