@@ -7,20 +7,20 @@ import { RequestBody, TwilioRequestMessage } from '../types.ts'
 import {
   authors,
   broadcastSentMessageStatus,
-  lookupTemplate,
   outgoingMessages,
   twilioMessages,
   UnsubscribedMessage,
   unsubscribedMessages,
 } from '../drizzle/schema.ts'
 import { delay } from './utils.ts'
-import { getMissiveMessage } from '../services/missive.ts'
+import { createPost, getMissiveMessage } from '../services/missive.ts'
 
 const UNSUBSCRIBED_TERMS = ['stop', 'unsubscribe']
 const START_TERMS = ['start']
 
 const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: RequestBody) => {
   const requestMessage = requestBody.message!
+  const phoneNumber = requestMessage.from_field.id
   // Check if it's a reply to first message
   await deletePendingSecondBroadcastMessage(db, requestMessage)
   const deliveredDate = new Date(requestMessage.delivered_at * 1000)
@@ -30,7 +30,7 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
     .from(broadcastSentMessageStatus)
     .where(
       and(
-        eq(broadcastSentMessageStatus.recipientPhoneNumber, requestMessage.from_field.id),
+        eq(broadcastSentMessageStatus.recipientPhoneNumber, phoneNumber),
         lt(last36Hours.toISOString(), broadcastSentMessageStatus.createdAt),
         gt(deliveredDate.toISOString(), broadcastSentMessageStatus.createdAt),
       ),
@@ -38,13 +38,15 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
       desc(broadcastSentMessageStatus.createdAt),
       desc(broadcastSentMessageStatus.id),
     ).limit(1)
+
   if (sentMessage.length > 0) {
     await db
       .update(twilioMessages)
       .set({ isBroadcastReply: true, replyToBroadcast: sentMessage[0].broadcastId })
       .where(eq(twilioMessages.id, requestMessage.id))
   }
-  if (UNSUBSCRIBED_TERMS.includes(requestMessage.preview.trim().toLowerCase())) {
+  if (UNSUBSCRIBED_TERMS.some((term) => requestMessage.preview.trim().toLowerCase().includes(term))) {
+    console.log(requestMessage.preview)
     const newUnsubscribedMessage: UnsubscribedMessage = {
       broadcastId: sentMessage[0] ? sentMessage[0].broadcastId : null,
       twilioMessageId: requestMessage.id,
@@ -54,12 +56,14 @@ const handleBroadcastReply = async (db: PostgresJsDatabase, requestBody: Request
     await db
       .update(authors)
       .set({ unsubscribed: true })
-      .where(eq(authors.phoneNumber, requestMessage.from_field.id))
-  } else if (START_TERMS.includes(requestMessage.preview.trim().toLowerCase())) {
+      .where(eq(authors.phoneNumber, phoneNumber))
+    const postMessage = `This phone number ${phoneNumber} has now been unsubscribed`
+    await createPost(db, requestBody.conversation.id, postMessage)
+  } else if (START_TERMS.some((term) => requestMessage.preview.trim().toLowerCase().includes(term))) {
     await db
       .update(authors)
       .set({ unsubscribed: false })
-      .where(eq(authors.phoneNumber, requestMessage.from_field.id))
+      .where(eq(authors.phoneNumber, phoneNumber))
   }
 }
 
@@ -99,22 +103,9 @@ const handleBroadcastOutgoing = async (db: PostgresJsDatabase, requestBody: Requ
     .limit(1)
 
   if (sentStatus.length > 0) {
-    const secretKeyLookup = await db
-      .select()
-      .from(lookupTemplate)
-      .where(eq(lookupTemplate.name, 'missive_secret_for_broadcast_twilio_status_updater'))
-      .limit(1)
-
-    if (secretKeyLookup.length === 0) {
-      log.error('Missive secret key not found in lookup table')
-      return
-    }
-    const missiveSecretKey = secretKeyLookup[0].content
-
     const randomDelay = Math.floor(Math.random() * 1001)
     await delay(randomDelay)
-
-    const response = await getMissiveMessage(message.id, missiveSecretKey)
+    const response = await getMissiveMessage(db, message.id)
     if (response) {
       const missiveMessage = response.messages
       if (missiveMessage.external_id) {
