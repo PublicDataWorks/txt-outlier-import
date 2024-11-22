@@ -5,7 +5,6 @@ import * as log from 'log'
 const refreshLookupCache = async (conversationId: string, references: string[]) => {
   const ref = references[0].replace(Deno.env.get('OUTLIER_PHONE_NUMBER')!, '')
   const url = `${Deno.env.get('LOOKUP_URL')!}/refresh-summary/${conversationId}?reference=${ref}`
-  log.info(`Refreshing lookup cache for ${url}, references: ${references}`)
 
   try {
     const response = await fetch(url, {
@@ -13,7 +12,9 @@ const refreshLookupCache = async (conversationId: string, references: string[]) 
         authorization: `Bearer ${Deno.env.get('LOOKUP_SECRET')!}`,
       },
     })
-    log.info(`refreshLookupCache response status: ${response.status}`)
+    if (!response.ok) {
+      log.error(`Failed to refreshLookupCache. conversationId: ${conversationId}`)
+    }
   } catch (error) {
     log.error(`refreshLookupCache error: ${error}`)
   }

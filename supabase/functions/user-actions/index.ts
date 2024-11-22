@@ -6,7 +6,7 @@ import { handleNewComment } from './handlers/comment-handler.ts'
 import { handleTeamChange } from './handlers/team-handler.ts'
 import { handleLabelChange } from './handlers/label-handler.ts'
 import { handleConversationAssigneeChange, handleConversationStatusChanged } from './handlers/conversation-handler.ts'
-import { handleTwilioMessage } from './handlers/twilio-message-handler.ts'
+import { handleResubscribe, handleTwilioMessage } from './handlers/twilio-message-handler.ts'
 import { verify } from './authentication.ts'
 import supabase from './database.ts'
 import { authenticationFailed } from './authentication.ts'
@@ -74,6 +74,7 @@ const handler = async (req: Request) => {
       case RuleType.IncomingTwilioMessage:
         await handleTwilioMessage(supabase, requestBody)
         await handleBroadcastReply(supabase, requestBody)
+        await handleResubscribe(supabase, requestBody)
         await refreshLookupCache(requestBody.conversation.id, requestBody.message!.references)
         break
       case RuleType.OutgoingTwilioMessage:

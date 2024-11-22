@@ -1,12 +1,15 @@
+import * as log from 'log'
 import { PostgresJsDatabase, PostgresJsTransaction } from 'drizzle-orm/postgres-js'
+import { eq } from 'drizzle-orm'
 
+import { authors, twilioMessages } from '../drizzle/schema.ts'
 import { RequestBody } from '../types.ts'
-
 import { upsertAuthor, upsertConversation, upsertLabel, upsertRule } from './utils.ts'
-import { twilioMessages } from '../drizzle/schema.ts'
 import { adaptTwilioMessage, adaptTwilioRequestAuthor } from '../adapters.ts'
 
-export const handleTwilioMessage = async (
+const RESUBSCRIBED_TERMS = ['start', 'resubscribe', 'detroit']
+
+const handleTwilioMessage = async (
   db: PostgresJsDatabase,
   requestBody: RequestBody,
 ) => {
@@ -48,3 +51,25 @@ const insertTwilioMessage = async (
   twilioMessage.senderId = requestBody.rule.type === 'outgoing_twilio_message' ? requestMessage.author?.id : undefined
   await tx.insert(twilioMessages).values(twilioMessage)
 }
+
+const handleResubscribe = async (db: PostgresJsDatabase, requestBody: RequestBody) => {
+  if (RESUBSCRIBED_TERMS.some((term) => requestBody.message!.preview.trim().toLowerCase().includes(term))) {
+    const sender = requestBody.message.from_field.id
+    const result = await db.select({ unsubscribed: authors.unsubscribed }).from(authors).where(
+      eq(authors.phoneNumber, sender),
+    )
+    if (result.length > 0) {
+      if (result[0].unsubscribed) {
+        await db
+          .update(authors)
+          .set({ unsubscribed: false })
+          .where(eq(authors.phoneNumber, sender))
+        const postMessage = `This phone number ${sender} has now been resubscribed`
+        await createPost(db, requestBody.conversation.id, postMessage)
+        log.info(`Author resubscribed: ${sender}`)
+      }
+    }
+  }
+}
+
+export { handleResubscribe, handleTwilioMessage }
