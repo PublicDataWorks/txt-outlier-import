@@ -6,6 +6,7 @@ import { authors, twilioMessages } from '../drizzle/schema.ts'
 import { RequestBody } from '../types.ts'
 import { upsertAuthor, upsertConversation, upsertLabel, upsertRule } from './utils.ts'
 import { adaptTwilioMessage, adaptTwilioRequestAuthor } from '../adapters.ts'
+import { createPost } from '../services/missive.ts'
 
 const RESUBSCRIBED_TERMS = ['start', 'resubscribe', 'detroit']
 
