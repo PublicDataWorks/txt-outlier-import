@@ -1,11 +1,11 @@
 {
   "imports": {
     "postgres": "https://deno.land/x/postgresjs/mod.js",
-    "drizzle-orm/postgres-js": "npm:drizzle-orm/postgres-js",
+    "drizzle-orm": "npm:drizzle-orm@0.30.9",
+    "drizzle-orm/postgres-js": "npm:drizzle-orm@0.30.9/postgres-js",
     "slack-API/": "https://deno.land/x/deno_slack_api@2.1.1/",
     "encoding/": "https://deno.land/std@0.210.0/encoding/",
     "date-fns/": "https://deno.land/x/date_fns@v2.15.0/",
-    "drizzle-orm": "npm:drizzle-orm",
     "log": "https://deno.land/std@0.212.0/log/mod.ts"
   }
 }
