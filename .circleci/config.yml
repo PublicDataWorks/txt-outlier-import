@@ -20,7 +20,6 @@ jobs:
             /home/circleci/.deno/bin/deno task fmt --check
 
       - run: curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - && sudo apt-get install -y nodejs
-      - run: npx supabase init
       - run: npx supabase start -x gotrue,realtime,storage-api,imgproxy,inbucket,postgrest,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector, pgbouncer
       - run:
           name: Run the tests
