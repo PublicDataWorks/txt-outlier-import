@@ -5,7 +5,7 @@
       "npm:drizzle-kit@^0.20.7": "npm:drizzle-kit@0.20.7_esbuild@0.19.10",
       "npm:drizzle-orm": "npm:drizzle-orm@0.29.1_postgres@3.4.3",
       "npm:drizzle-orm@^0.29.1": "npm:drizzle-orm@0.29.1_postgres@3.4.3",
-      "npm:drizzle-orm@^0.29.3": "npm:drizzle-orm@0.29.3_postgres@3.4.3",
+      "npm:drizzle-orm@^0.30.9": "npm:drizzle-orm@0.30.10_postgres@3.4.3",
       "npm:node-mocks-http": "npm:node-mocks-http@1.14.1",
       "npm:postgres": "npm:postgres@3.4.3",
       "npm:postgres@^3.4.3": "npm:postgres@3.4.3"
@@ -618,8 +618,8 @@
           "postgres": "postgres@3.4.3"
         }
       },
-      "drizzle-orm@0.29.3_postgres@3.4.3": {
-        "integrity": "sha512-uSE027csliGSGYD0pqtM+SAQATMREb3eSM/U8s6r+Y0RFwTKwftnwwSkqx3oS65UBgqDOM0gMTl5UGNpt6lW0A==",
+      "drizzle-orm@0.30.10_postgres@3.4.3": {
+        "integrity": "sha512-IRy/QmMWw9lAQHpwbUh1b8fcn27S/a9zMIzqea1WNOxK9/4EB8gIo+FZWLiPXzl2n9ixGSv8BhsLZiOppWEwBw==",
         "dependencies": {
           "postgres": "postgres@3.4.3"
         }
@@ -3174,7 +3174,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:drizzle-orm@^0.29.3",
+        "npm:drizzle-orm@^0.30.9",
         "npm:postgres@^3.4.3"
       ]
     }
